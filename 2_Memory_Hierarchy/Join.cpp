@@ -69,7 +69,6 @@ vector<uint_fast32_t> splitRelations(const vector<CastRelation>& castRelation, c
         return {0, 0};
         }
 
-
     int title_id = titleRelation[index_of_cutoff].titleId;
     int cast_id = castRelation[index_of_cutoff].movieId;
 
@@ -159,7 +158,7 @@ vector<ResultRelation> performJoin(const vector<CastRelation>& castRelation, con
         thread_results[i].reserve(estimatedResultCount);
     }
 
-    #pragma omp parallel for schedule(dynamic) num_threads(numThreads) default(none)
+#pragma omp parallel for schedule(dynamic) num_threads(numThreads) default(none) shared(castSlices, titleSlices, thread_results)
     for (int i = 0; i < static_cast<int>(castSlices.size()); ++i) {
         thread_results[i] = performJoinThread(castSlices[i], titleSlices[i]);
     }
