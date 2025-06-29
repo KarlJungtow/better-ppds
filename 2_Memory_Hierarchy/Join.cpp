@@ -48,7 +48,6 @@ int splitCast(const vector<CastRelation>& castRelation, int index_of_cutoff) {
             current_index--;
         }
     }
-
     return current_index;
 }
 
@@ -111,7 +110,7 @@ vector<ResultRelation> performJoinThread(const vector<CastRelation>& castRelatio
 }
 
 vector<ResultRelation> performJoin(const vector<CastRelation>& castRelation, const vector<TitleRelation>& titleRelation, int numThreads) {
-    int half_cache_size_with_padding = 256 * 1024;
+    int half_cache_size_with_padding = 896 * 1024;
 
     if (castRelation.empty()) {
         printf("Size is empty!");
@@ -212,15 +211,17 @@ TitleRelation makeTitle(int tid, const std::string& title, const std::string& in
     return t;
 }
 
-int main() {std::vector<CastRelation> castRelations = {
-    makeCast(1, 101, 10, 1, "note1", 0, 1),
-    makeCast(2, 102, 10, 2, "note2", 1, 2),
-    makeCast(3, 103, 11, 1, "note3", 2, 1),
-    makeCast(4, 104, 12, 1, "note4", 3, 1),
-    makeCast(5, 105, 12, 2, "note5", 4, 3),
-    makeCast(6, 106, 13, 1, "note6", 5, 2),
-    makeCast(7, 107, 14, 1, "note7", 6, 1)
-};
+
+int main() {
+    std::vector<CastRelation> castRelations = {
+        makeCast(1, 101, 10, 1, "note1", 0, 1),
+        makeCast(2, 102, 10, 2, "note2", 1, 2),
+        makeCast(3, 103, 11, 1, "note3", 2, 1),
+        makeCast(4, 104, 12, 1, "note4", 3, 1),
+        makeCast(5, 105, 12, 2, "note5", 4, 3),
+        makeCast(6, 106, 13, 1, "note6", 5, 2),
+        makeCast(7, 107, 14, 1, "note7", 6, 1)
+    };
 
     std::vector<TitleRelation> titleRelations = {
         makeTitle(10, "Title A", "", 1, 2001, 1001, ""),
@@ -231,44 +232,45 @@ int main() {std::vector<CastRelation> castRelations = {
         makeTitle(14, "Title E", "", 1, 2005, 1006, "")
     };
 
+    int cast_cutoff_index = 4;
+    int title_cutoff_index = 4;
 
-    // Pick cutoff indices somewhere in the middle
-    int cast_cutoff_index = 5;  // Points to movieId = 13
-    int title_cutoff_index = 4; // Points to titleId = 13
+    std::cout << "=== Cast movieIds ===\n";
+    for (const auto& c : castRelations)
+        std::cout << c.movieId << " ";
+    std::cout << "\n";
 
-    std::cout << "=== Original CastRelation Entries ===" << std::endl;
-    for (const auto& c : castRelations) {
-        std::cout << castRelationToString(c) << std::endl;
-    }
+    std::cout << "\n=== Title titleIds ===\n";
+    for (const auto& t : titleRelations)
+        std::cout << t.titleId << " ";
+    std::cout << "\n";
 
-    std::cout << "\n=== Original TitleRelation Entries ===" << std::endl;
-    for (const auto& t : titleRelations) {
-        std::cout << titleRelationToString(t) << std::endl;
-    }
-
-    // Perform splitting
     int split_cast = splitCast(castRelations, cast_cutoff_index);
     int split_title = splitTitle(titleRelations, title_cutoff_index);
 
-    std::cout << "\n--- splitCast at index " << cast_cutoff_index << " returned: " << split_cast << std::endl;
-    std::cout << "--- splitTitle at index " << title_cutoff_index << " returned: " << split_title << std::endl;
+    std::cout << "\n--- splitCast at index " << cast_cutoff_index << " -> index: " << split_cast
+              << ", movieId: " << castRelations[split_cast].movieId << "\n";
 
-    // Use splitRelations to determine safe cutoff for parallel chunks
-    std::vector<int> splits = splitRelations(castRelations, titleRelations, cast_cutoff_index, title_cutoff_index);
+    std::cout << "--- splitTitle at index " << title_cutoff_index << " -> index: " << split_title
+              << ", titleId: " << titleRelations[split_title].titleId << "\n";
 
-    std::cout << "\n=== splitRelations Output ===" << std::endl;
-    std::cout << "Title split index: " << splits[0] << std::endl;
-    std::cout << "Cast split index:  " << splits[1] << std::endl;
+    auto splits = splitRelations(castRelations, titleRelations, cast_cutoff_index, title_cutoff_index);
+    std::cout << "\n=== splitRelations result ===\n";
+    std::cout << "Title split index: " << splits[0]
+              << ", titleId: " << titleRelations[splits[0]].titleId << "\n";
+    std::cout << "Cast  split index: " << splits[1]
+              << ", movieId: " << castRelations[splits[1]].movieId << "\n";
 
-    std::cout << "\n=== Cast Slice ===" << std::endl;
-    for (int i = 0; i < splits[1]; ++i) {
-        std::cout << castRelationToString(castRelations[i]) << std::endl;
-    }
+    std::cout << "\n=== Cast Slice (IDs up to split) ===\n";
+    for (int i = 0; i < splits[1]; ++i)
+        std::cout << castRelations[i].movieId << " ";
+    std::cout << "\n";
 
-    std::cout << "\n=== Title Slice ===" << std::endl;
-    for (int i = 0; i < splits[0]; ++i) {
-        std::cout << titleRelationToString(titleRelations[i]) << std::endl;
-    }
+    std::cout << "\n=== Title Slice (IDs up to split) ===\n";
+    for (int i = 0; i < splits[0]; ++i)
+        std::cout << titleRelations[i].titleId << " ";
+    std::cout << "\n";
 
     return 0;
 }
+
