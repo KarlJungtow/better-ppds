@@ -1,0 +1,1 @@
+/usr/bin/c++ -fPIC -g -O0 -fPIC -shared -Wl,-soname,libgtest_main.so.1.14.0 -o ../../../lib/libgtest_main.so.1.14.0 CMakeFiles/gtest_main.dir/src/gtest_main.cc.o  -Wl,-rpath,/home/karl/Desktop/better-ppds/2_Memory_Hierarchy/cmake-build-debug/lib: ../../../lib/libgtest.so.1.14.0 -lpthread
