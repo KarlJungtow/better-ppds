@@ -1,5 +1,5 @@
 /*
-    Licensed under the Apache License, Version 2.0 (the "License");
+Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
     You may obtain a copy of the License at
 
@@ -18,13 +18,18 @@
 #include <iostream>
 #include <gtest/gtest.h>
 #include <omp.h>
+using namespace std;
 
 std::vector<ResultRelation> performJoin(const std::vector<CastRelation>& castRelation, const std::vector<TitleRelation>& titleRelation, int numThreads) {
     omp_set_num_threads(numThreads);
     std::vector<ResultRelation> resultTuples;
 
-    // TODO: Implement a join on the strings cast.note and title.title
-    // The benchmark will join on increasing string sizes: cast.note% LIKE title.title
-
+    for(auto cast : castRelation) {
+        for (auto title : titleRelation) {
+            if (strcmp(cast.note, title.title)==0) {
+                resultTuples.push_back(createResultTuple(cast, title));
+            }
+        }
+    }
     return resultTuples;
 }
