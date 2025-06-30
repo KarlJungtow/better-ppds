@@ -155,11 +155,10 @@ vector<ResultRelation> performJoin(const vector<CastRelation>& castRelation, con
     vector<vector<ResultRelation>> thread_results(castSlices.size());
 
     for (int i = 0; i < thread_results.size(); i++) {
-        auto estimatedResultCount = castSlices[i].size() * 1.25;
-        thread_results[i].reserve(estimatedResultCount);
+        thread_results[i].reserve(castSlices[i].size() * 2);
     }
 
-#pragma omp parallel for schedule(dynamic) num_threads(numThreads) default(none) shared(castSlices, titleSlices, thread_results)
+#pragma omp parallel for schedule(dynamic) num_threads(50) default(none) shared(castSlices, titleSlices, thread_results)
     for (int i = 0; i < static_cast<int>(castSlices.size()); ++i) {
         thread_results[i] = performJoinThread(castSlices[i], titleSlices[i]);
     }
