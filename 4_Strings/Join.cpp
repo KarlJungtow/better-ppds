@@ -24,10 +24,16 @@ std::vector<ResultRelation> performJoin(const std::vector<CastRelation>& castRel
     omp_set_num_threads(numThreads);
     std::vector<ResultRelation> resultTuples;
 
+
     for(auto cast : castRelation) {
         for (auto title : titleRelation) {
-                resultTuples.push_back(createResultTuple(cast, title));
+            if (cast.note[0] == title.title[0]) {
+                if (strncmp(cast.note, title.title, strlen(title.title))==0) {
+                    resultTuples.push_back(createResultTuple(cast, title));
+                }
+            }
         }
     }
+    
     return resultTuples;
 }
