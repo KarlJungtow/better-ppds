@@ -27,7 +27,7 @@ std::vector<ResultRelation> performJoin(const std::vector<CastRelation>& castRel
 
     for(auto cast : castRelation) {
         for (auto title : titleRelation) {
-            if (strncasecmp(cast.note, title.title, strlen(title.title))==0) {
+            if (strncasecmp(cast.note, title.title, strlen(cast.note))==0) {
                 resultTuples.push_back(createResultTuple(cast, title));
             }
         }
