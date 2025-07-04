@@ -21,7 +21,7 @@
 #include <string>
 #include <utility>
 #include <vector>
-
+using namespace std;
 /**
  * @brief Util class to measure the time of NES components and sub-components
  * using snapshots
@@ -131,7 +131,7 @@ class Timer {
      * @return Runtime
      */
     int64_t getRuntimeFromSnapshot(const std::string& snapShotName) {
-        auto it = std::find_if(snapshots.begin(), snapshots.end(), [&](Snapshot const& snapshot) {
+        auto it = find_if(snapshots.begin(), snapshots.end(), [&](Snapshot const& snapshot) {
             return (snapshot.name == snapShotName);
         });
         if (it != snapshots.end()) {
@@ -211,9 +211,9 @@ class Timer {
      */
     template<typename ConvertUnit = PrintTimeUnit>
     static std::string getTimeUnitString() {
-        if constexpr (std::is_same_v<ConvertUnit, std::nano>) {
+        if (is_same_v<ConvertUnit, std::nano>) {
             return " ns";
-        } else if constexpr (std::is_same_v<ConvertUnit, std::micro>) {
+        } else if constexpr (is_same_v<ConvertUnit, std::micro>) {
             return " µs";
         } else if constexpr (std::is_same_v<ConvertUnit, std::milli>) {
             return " ms";
