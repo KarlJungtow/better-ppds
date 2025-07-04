@@ -266,6 +266,30 @@ Join.cpp.s:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/2_Memory_Hierarchy_EXECUTABLE.dir/build.make CMakeFiles/2_Memory_Hierarchy_EXECUTABLE.dir/Join.cpp.s
 .PHONY : Join.cpp.s
 
+home/karl/Desktop/better-ppds/4_Strings/Trie.o: home/karl/Desktop/better-ppds/4_Strings/Trie.cpp.o
+.PHONY : home/karl/Desktop/better-ppds/4_Strings/Trie.o
+
+# target to build an object file
+home/karl/Desktop/better-ppds/4_Strings/Trie.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/2_Memory_Hierarchy_EXECUTABLE.dir/build.make CMakeFiles/2_Memory_Hierarchy_EXECUTABLE.dir/home/karl/Desktop/better-ppds/4_Strings/Trie.cpp.o
+.PHONY : home/karl/Desktop/better-ppds/4_Strings/Trie.cpp.o
+
+home/karl/Desktop/better-ppds/4_Strings/Trie.i: home/karl/Desktop/better-ppds/4_Strings/Trie.cpp.i
+.PHONY : home/karl/Desktop/better-ppds/4_Strings/Trie.i
+
+# target to preprocess a source file
+home/karl/Desktop/better-ppds/4_Strings/Trie.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/2_Memory_Hierarchy_EXECUTABLE.dir/build.make CMakeFiles/2_Memory_Hierarchy_EXECUTABLE.dir/home/karl/Desktop/better-ppds/4_Strings/Trie.cpp.i
+.PHONY : home/karl/Desktop/better-ppds/4_Strings/Trie.cpp.i
+
+home/karl/Desktop/better-ppds/4_Strings/Trie.s: home/karl/Desktop/better-ppds/4_Strings/Trie.cpp.s
+.PHONY : home/karl/Desktop/better-ppds/4_Strings/Trie.s
+
+# target to generate assembly for a file
+home/karl/Desktop/better-ppds/4_Strings/Trie.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/2_Memory_Hierarchy_EXECUTABLE.dir/build.make CMakeFiles/2_Memory_Hierarchy_EXECUTABLE.dir/home/karl/Desktop/better-ppds/4_Strings/Trie.cpp.s
+.PHONY : home/karl/Desktop/better-ppds/4_Strings/Trie.cpp.s
+
 # Help Target
 help:
 	@echo "The following are some of the valid targets for this Makefile:"
@@ -287,6 +311,9 @@ help:
 	@echo "... Join.o"
 	@echo "... Join.i"
 	@echo "... Join.s"
+	@echo "... home/karl/Desktop/better-ppds/4_Strings/Trie.o"
+	@echo "... home/karl/Desktop/better-ppds/4_Strings/Trie.i"
+	@echo "... home/karl/Desktop/better-ppds/4_Strings/Trie.s"
 .PHONY : help
 
 

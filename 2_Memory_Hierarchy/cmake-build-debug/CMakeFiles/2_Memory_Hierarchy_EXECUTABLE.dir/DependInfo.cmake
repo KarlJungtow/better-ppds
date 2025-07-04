@@ -9,6 +9,7 @@ set(CMAKE_DEPENDS_LANGUAGES
 # The set of dependency files which are needed:
 set(CMAKE_DEPENDS_DEPENDENCY_FILES
   "/home/karl/Desktop/better-ppds/2_Memory_Hierarchy/Join.cpp" "CMakeFiles/2_Memory_Hierarchy_EXECUTABLE.dir/Join.cpp.o" "gcc" "CMakeFiles/2_Memory_Hierarchy_EXECUTABLE.dir/Join.cpp.o.d"
+  "/home/karl/Desktop/better-ppds/4_Strings/Trie.cpp" "CMakeFiles/2_Memory_Hierarchy_EXECUTABLE.dir/home/karl/Desktop/better-ppds/4_Strings/Trie.cpp.o" "gcc" "CMakeFiles/2_Memory_Hierarchy_EXECUTABLE.dir/home/karl/Desktop/better-ppds/4_Strings/Trie.cpp.o.d"
   )
 
 # Targets to which this target links which contain Fortran sources.

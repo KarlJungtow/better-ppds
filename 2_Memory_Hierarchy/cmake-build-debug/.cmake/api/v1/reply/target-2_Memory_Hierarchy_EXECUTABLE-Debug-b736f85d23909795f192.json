@@ -41,13 +41,13 @@
 			{
 				"command" : 1,
 				"file" : 0,
-				"line" : 68,
+				"line" : 70,
 				"parent" : 0
 			},
 			{
 				"command" : 3,
 				"file" : 0,
-				"line" : 64,
+				"line" : 66,
 				"parent" : 0
 			},
 			{
@@ -94,7 +94,7 @@
 			{
 				"command" : 5,
 				"file" : 0,
-				"line" : 87,
+				"line" : 89,
 				"parent" : 0
 			},
 			{
@@ -106,7 +106,7 @@
 			{
 				"command" : 7,
 				"file" : 0,
-				"line" : 79,
+				"line" : 81,
 				"parent" : 0
 			}
 		]
@@ -167,7 +167,8 @@
 			},
 			"sourceIndexes" : 
 			[
-				0
+				0,
+				1
 			]
 		}
 	],
@@ -240,7 +241,8 @@
 			"name" : "Source Files",
 			"sourceIndexes" : 
 			[
-				0
+				0,
+				1
 			]
 		}
 	],
@@ -250,6 +252,12 @@
 			"backtrace" : 1,
 			"compileGroupIndex" : 0,
 			"path" : "Join.cpp",
+			"sourceGroupIndex" : 0
+		},
+		{
+			"backtrace" : 1,
+			"compileGroupIndex" : 0,
+			"path" : "/home/karl/Desktop/better-ppds/4_Strings/Trie.cpp",
 			"sourceGroupIndex" : 0
 		}
 	],

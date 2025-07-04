@@ -81,8 +81,8 @@ std::vector<ResultRelation> performJoin(const std::vector<CastRelation>& castRel
     //omp_set_num_threads(numThreads);
     std::vector<ResultRelation> resultTuples;
     Trie* trie = new Trie();
-    for (auto cast : castRelation) {
-        trie->insert(&cast);
+    for (const auto& cast : castRelation) {
+        trie->insert(const_cast<CastRelation*>(&cast));
     }
 
     for (auto title : titleRelation) {
@@ -91,6 +91,6 @@ std::vector<ResultRelation> performJoin(const std::vector<CastRelation>& castRel
             resultTuples.emplace_back(createResultTuple(*cast, title));
         }
     }
-    free(trie);
+    delete trie;
     return resultTuples;
 }
