@@ -10,8 +10,8 @@ set(CMAKE_CXX_COMPILER_ID "GNU")
 
 # Preprocessor definitions for this target.
 set(CMAKE_TARGET_DEFINITIONS_CXX
-  "DATA_DIRECTORY=\"/home/karl/Desktop/better-ppds/4_Strings/../data\""
-  "SOURCE_DIRECTORY=\"/home/karl/Desktop/better-ppds/4_Strings\""
+  "DATA_DIRECTORY=\"/home/karl/Desktop/better-ppds/4_Strings/../../data/\""
+  "SOURCE_DIRECTORY=\"/home/karl/Desktop/better-ppds/4_Strings/\""
   )
 
 # The include file search paths:

@@ -70,8 +70,8 @@ CMakeFiles/googletest-complete: gtest/src/googletest-stamp/googletest-install
 	/usr/bin/cmake -E touch /home/karl/Desktop/better-ppds/4_Strings/build/gtest/src/googletest-stamp/googletest-done
 
 gtest/src/googletest-stamp/googletest-install: gtest/src/googletest-stamp/googletest-build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --blue --bold --progress-dir=/home/karl/Desktop/better-ppds/4_Strings/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Performing install step for 'googletest'"
-	cd /home/karl/Desktop/better-ppds/4_Strings/build/gtest/src/googletest-build && $(MAKE) install
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --blue --bold --progress-dir=/home/karl/Desktop/better-ppds/4_Strings/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "No install step for 'googletest'"
+	cd /home/karl/Desktop/better-ppds/4_Strings/build/gtest/src/googletest-build && /usr/bin/cmake -E echo_append
 	cd /home/karl/Desktop/better-ppds/4_Strings/build/gtest/src/googletest-build && /usr/bin/cmake -E touch /home/karl/Desktop/better-ppds/4_Strings/build/gtest/src/googletest-stamp/googletest-install
 
 gtest/src/googletest-stamp/googletest-mkdir:

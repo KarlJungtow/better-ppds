@@ -11,7 +11,7 @@ if(error_code)
 endif()
 
 execute_process(
-  COMMAND "/usr/bin/git" show-ref release-1.14.0
+  COMMAND "/usr/bin/git" show-ref v1.14.0
   WORKING_DIRECTORY "/home/karl/Desktop/better-ppds/4_Strings/build/gtest/src/googletest"
   OUTPUT_VARIABLE show_ref_output
   )
@@ -25,19 +25,19 @@ endif()
 
 # Tag is in the form <remote>/<tag> (i.e. origin/master) we must strip
 # the remote from the tag.
-if("${show_ref_output}" MATCHES "refs/remotes/release-1.14.0")
-  string(REGEX MATCH "^([^/]+)/(.+)$" _unused "release-1.14.0")
+if("${show_ref_output}" MATCHES "refs/remotes/v1.14.0")
+  string(REGEX MATCH "^([^/]+)/(.+)$" _unused "v1.14.0")
   set(git_remote "${CMAKE_MATCH_1}")
   set(git_tag "${CMAKE_MATCH_2}")
 else()
   set(git_remote "origin")
-  set(git_tag "release-1.14.0")
+  set(git_tag "v1.14.0")
 endif()
 
 # This will fail if the tag does not exist (it probably has not been fetched
 # yet).
 execute_process(
-  COMMAND "/usr/bin/git" rev-list --max-count=1 release-1.14.0
+  COMMAND "/usr/bin/git" rev-list --max-count=1 v1.14.0
   WORKING_DIRECTORY "/home/karl/Desktop/better-ppds/4_Strings/build/gtest/src/googletest"
   RESULT_VARIABLE error_code
   OUTPUT_VARIABLE tag_sha
@@ -136,12 +136,12 @@ if(error_code OR is_remote_ref OR NOT ("${tag_sha}" STREQUAL "${head_sha}"))
     endif()
   else()
     execute_process(
-      COMMAND "/usr/bin/git" checkout release-1.14.0
+      COMMAND "/usr/bin/git" checkout v1.14.0
       WORKING_DIRECTORY "/home/karl/Desktop/better-ppds/4_Strings/build/gtest/src/googletest"
       RESULT_VARIABLE error_code
       )
     if(error_code)
-      message(FATAL_ERROR "Failed to checkout tag: 'release-1.14.0'")
+      message(FATAL_ERROR "Failed to checkout tag: 'v1.14.0'")
     endif()
   endif()
 

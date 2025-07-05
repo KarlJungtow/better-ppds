@@ -4,7 +4,7 @@
 # compile CXX with /usr/bin/c++
 CXX_FLAGS = -g -O0 -fPIC   -fopenmp -std=gnu++2a
 
-CXX_DEFINES = -DDATA_DIRECTORY=\"/home/karl/Desktop/better-ppds/4_Strings/../data\" -DSOURCE_DIRECTORY=\"/home/karl/Desktop/better-ppds/4_Strings\"
+CXX_DEFINES = -DDATA_DIRECTORY=\"/home/karl/Desktop/better-ppds/4_Strings/../../data/\" -DSOURCE_DIRECTORY=\"/home/karl/Desktop/better-ppds/4_Strings/\"
 
 CXX_INCLUDES = -I/home/karl/Desktop/better-ppds/4_Strings/../Util/include -I/home/karl/Desktop/better-ppds/4_Strings/build/gtest/src/googletest/googletest/include -I/home/karl/Desktop/better-ppds/4_Strings/build/gtest/src/googletest/googlemock/include 
 

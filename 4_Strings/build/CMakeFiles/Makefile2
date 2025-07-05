@@ -77,8 +77,8 @@ clean: CMakeFiles/googletest.dir/clean
 # Target rules for target CMakeFiles/JoinTest.dir
 
 # All Build rule for target.
-CMakeFiles/JoinTest.dir/all: CMakeFiles/JoinUtils.dir/all
 CMakeFiles/JoinTest.dir/all: CMakeFiles/googletest.dir/all
+CMakeFiles/JoinTest.dir/all: CMakeFiles/JoinUtils.dir/all
 	$(MAKE) -f CMakeFiles/JoinTest.dir/build.make CMakeFiles/JoinTest.dir/depend
 	$(MAKE) -f CMakeFiles/JoinTest.dir/build.make CMakeFiles/JoinTest.dir/build
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/karl/Desktop/better-ppds/4_Strings/build/CMakeFiles --progress-num=3,4 "Built target JoinTest"

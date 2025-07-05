@@ -224,37 +224,8 @@ CMAKE_STRIP:FILEPATH=/usr/bin/strip
 // Studio IDE projects all commands are done without /nologo.
 CMAKE_VERBOSE_MAKEFILE:BOOL=FALSE
 
-//Path to data directory
-DATA_DIRECTORY:PATH=/home/karl/Desktop/better-ppds/4_Strings/../data
-
-//Directory under which to collect all populated content
-FETCHCONTENT_BASE_DIR:PATH=/home/karl/Desktop/better-ppds/4_Strings/build/_deps
-
-//Disables all attempts to download or update content and assumes
-// source dirs already exist
-FETCHCONTENT_FULLY_DISCONNECTED:BOOL=OFF
-
-//Enables QUIET option for all content population
-FETCHCONTENT_QUIET:BOOL=ON
-
-//When not empty, overrides where to find pre-populated content
-// for googletest
-FETCHCONTENT_SOURCE_DIR_GOOGLETEST:PATH=
-
-//Enables UPDATE_DISCONNECTED behavior for all content population
-FETCHCONTENT_UPDATES_DISCONNECTED:BOOL=OFF
-
-//Enables UPDATE_DISCONNECTED behavior just for population of googletest
-FETCHCONTENT_UPDATES_DISCONNECTED_GOOGLETEST:BOOL=OFF
-
 //Git command line client
 GIT_EXECUTABLE:FILEPATH=/usr/bin/git
-
-//Value Computed by CMake
-JoinProject_BINARY_DIR:STATIC=/home/karl/Desktop/better-ppds/4_Strings/build
-
-//Value Computed by CMake
-JoinProject_SOURCE_DIR:STATIC=/home/karl/Desktop/better-ppds/4_Strings
 
 //CXX compiler flags for OpenMP parallelization
 OpenMP_CXX_FLAGS:STRING=-fopenmp
@@ -279,9 +250,6 @@ PPDS_Strings_BINARY_DIR:STATIC=/home/karl/Desktop/better-ppds/4_Strings/build
 
 //Value Computed by CMake
 PPDS_Strings_SOURCE_DIR:STATIC=/home/karl/Desktop/better-ppds/4_Strings
-
-//Source directory
-SOURCE_DIRECTORY:PATH=/home/karl/Desktop/better-ppds/4_Strings
 
 
 ########################
@@ -432,11 +400,11 @@ CMAKE_UNAME:INTERNAL=/usr/bin/uname
 //ADVANCED property for variable: CMAKE_VERBOSE_MAKEFILE
 CMAKE_VERBOSE_MAKEFILE-ADVANCED:INTERNAL=1
 //Details about finding OpenMP
-FIND_PACKAGE_MESSAGE_DETAILS_OpenMP:INTERNAL=[TRUE][TRUE][c ][v()]
+FIND_PACKAGE_MESSAGE_DETAILS_OpenMP:INTERNAL=[TRUE][TRUE][c ][v4.5()]
 //Details about finding OpenMP_C
-FIND_PACKAGE_MESSAGE_DETAILS_OpenMP_C:INTERNAL=[-fopenmp][/usr/lib/gcc/x86_64-linux-gnu/9/libgomp.so][/usr/lib/x86_64-linux-gnu/libpthread.so][v()]
+FIND_PACKAGE_MESSAGE_DETAILS_OpenMP_C:INTERNAL=[-fopenmp][/usr/lib/gcc/x86_64-linux-gnu/9/libgomp.so][/usr/lib/x86_64-linux-gnu/libpthread.so][v4.5()]
 //Details about finding OpenMP_CXX
-FIND_PACKAGE_MESSAGE_DETAILS_OpenMP_CXX:INTERNAL=[-fopenmp][/usr/lib/gcc/x86_64-linux-gnu/9/libgomp.so][/usr/lib/x86_64-linux-gnu/libpthread.so][v()]
+FIND_PACKAGE_MESSAGE_DETAILS_OpenMP_CXX:INTERNAL=[-fopenmp][/usr/lib/gcc/x86_64-linux-gnu/9/libgomp.so][/usr/lib/x86_64-linux-gnu/libpthread.so][v4.5()]
 //ADVANCED property for variable: GIT_EXECUTABLE
 GIT_EXECUTABLE-ADVANCED:INTERNAL=1
 //Result of TRY_COMPILE

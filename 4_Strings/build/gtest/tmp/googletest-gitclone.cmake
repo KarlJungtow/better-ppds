@@ -32,12 +32,12 @@ if(error_code)
 endif()
 
 execute_process(
-  COMMAND "/usr/bin/git"  checkout release-1.14.0 --
+  COMMAND "/usr/bin/git"  checkout v1.14.0 --
   WORKING_DIRECTORY "/home/karl/Desktop/better-ppds/4_Strings/build/gtest/src/googletest"
   RESULT_VARIABLE error_code
   )
 if(error_code)
-  message(FATAL_ERROR "Failed to checkout tag: 'release-1.14.0'")
+  message(FATAL_ERROR "Failed to checkout tag: 'v1.14.0'")
 endif()
 
 set(init_submodules TRUE)
