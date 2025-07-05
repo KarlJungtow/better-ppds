@@ -75,7 +75,6 @@ public:
             }
         }
     }
-
     void printTrie() const {
         string currentPrefix;
         printTrieRecursive(root.get(), currentPrefix);
@@ -105,7 +104,6 @@ private:
             }
         }
     }
-
 };
 
 //-------------------------------------------------------------------------------------------------------------------------
@@ -122,7 +120,7 @@ vector<ResultRelation> performJoin(const vector<CastRelation>& castRelation,
     for (const auto& cast : castRelation) {
         trie.insert(&cast);
     }
-    trie.printTrie();
+
     // Titel durchsuchen und Matches sammelncd
     vector<const CastRelation*> prefixMatches;
     for (const auto& title : titleRelation) {
@@ -133,6 +131,6 @@ vector<ResultRelation> performJoin(const vector<CastRelation>& castRelation,
             resultTuples.emplace_back(createResultTuple(*cast, title));
         }
     }
-
+    trie.printTrie();
     return resultTuples;
 }
