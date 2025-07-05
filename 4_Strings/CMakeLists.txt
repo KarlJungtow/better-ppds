@@ -88,3 +88,6 @@ target_compile_definitions(${PROJECT_EXECUTABLE} PRIVATE
     DATA_DIRECTORY="${DATA_DIRECTORY}"
     SOURCE_DIRECTORY="${SOURCE_DIRECTORY}"
     )
+
+add_executable(JoinTest JoinTest.cpp)
+target_link_libraries(JoinTest PRIVATE ${LIBS})

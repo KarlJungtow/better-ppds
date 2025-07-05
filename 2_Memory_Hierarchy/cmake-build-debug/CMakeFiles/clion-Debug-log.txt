@@ -11,6 +11,15 @@ Call Stack (most recent call first):
 This warning is for project developers.  Use -Wno-dev to suppress it.
 
 -- OpenMP found
--- Configuring done (0.2s)
--- Generating done (0.0s)
--- Build files have been written to: /home/karl/Desktop/better-ppds/2_Memory_Hierarchy/cmake-build-debug
+-- Configuring done (0.4s)
+CMake Error at CMakeLists.txt:61 (add_executable):
+  Cannot find source file:
+
+    ../4_Strings/Trie.cpp
+
+
+CMake Error at CMakeLists.txt:61 (add_executable):
+  No SOURCES given to target: 2_Memory_Hierarchy_EXECUTABLE
+
+
+CMake Generate step failed.  Build files cannot be regenerated correctly.
