@@ -89,9 +89,9 @@ public:
             localResults.reserve(titleRelation.size() * 2 / omp_get_num_threads());
 
 #pragma omp for schedule(static)
-            for (size_t i = 0; i < titleRelation.size(); i++) {
-                const auto& title = titleRelation[i];
+            for (const auto & title : titleRelation) {
                 vector<const CastRelation*> prefixMatches;
+                prefixMatches.reserve(10);
                 trie.findPrefixMatches(title.title, prefixMatches);
 
                 for (const auto cast : prefixMatches) {
@@ -100,11 +100,9 @@ public:
             }
 
             // Combine local results (critical section)
-#pragma omp critical{
-
-                resultTuples.insert(resultTuples.end(),
-                                    make_move_iterator(localResults.begin()),
-                                    make_move_iterator(localResults.end()));
+#pragma omp critical
+            {
+                resultTuples.insert(resultTuples.end(),make_move_iterator(localResults.begin()), make_move_iterator(localResults.end()));
             }
 
         return resultTuples;
