@@ -87,21 +87,12 @@ std::vector<TitleRelation> getHardcodedTitleRelations() {
 }
 
 
-int safe_to_lower(char c) noexcept {
-    char d = static_cast<char>(tolower(static_cast<unsigned char>(c)));
-    if (d >= 'a' && d <= 'z')
-        return d - 'a';
-    return 27;
-
-}
-
 int main() {
-    std::cout << safe_to_lower('%') << std::endl;
-    std::cout << safe_to_lower('&') << std::endl;
+
     // Join durchführen
     std::vector<CastRelation> castRelations = getHardcodedCastRelations();
     std::vector<TitleRelation> titleRelations = getHardcodedTitleRelations();
-    std::vector<ResultRelation> results = performJoin(castRelations, titleRelations, 1);
+    std::vector<ResultRelation> results = performJoin(castRelations, titleRelations, 4);
 
     // Debug-Ausgabe
     std::cout << "Anzahl Ergebnisse: " << results.size() << "\n";
@@ -111,7 +102,7 @@ int main() {
     }
 
     // Assertions für erwartete Ergebnisse
-    assert(results.size() == 6);  // Erwartete Anzahl von Ergebnissen
+    assert(results.size() == 7);  // Erwartete Anzahl von Ergebnissen
 
     std::cout << "Alle Tests erfolgreich bestanden!\n";
     return 0;

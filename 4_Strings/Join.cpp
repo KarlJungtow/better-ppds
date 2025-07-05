@@ -8,9 +8,8 @@
 using namespace std;
 
 // Constants for Trie configuration (unchanged)
-static constexpr int ALPHABET_SIZE = 26;
-static constexpr int OTHER_INDEX = ALPHABET_SIZE;
-static constexpr int TOTAL_CHILDREN = ALPHABET_SIZE + 1;
+static constexpr int OTHER_INDEX = 26;
+static constexpr int TOTAL_CHILDREN = 27;
 
 class Trie {
 private:
@@ -72,6 +71,7 @@ public:
  vector<ResultRelation> performJoin(const vector<CastRelation>& castRelation,
                                     const vector<TitleRelation>& titleRelation,
                                     int numThreads) {
+     omp_set_num_threads(numThreads);
      // Single-threaded Trie construction
      Trie trie;
      for (const auto& cast : castRelation) {
@@ -82,13 +82,13 @@ public:
      resultTuples.reserve(titleRelation.size() * 2);
 
      // Parallel section for title processing
-#pragma omp parallel num_threads(numThreads)
+#pragma omp parallel
      {
          // Thread-local storage for matches and results
          vector<ResultRelation> localResults;
          localResults.reserve(titleRelation.size() * 2 / omp_get_num_threads());
 
-#pragma omp for schedule(static)
+        #pragma omp for schedule(static)
          for (const auto & title : titleRelation) {
              vector<const CastRelation*> prefixMatches;
              prefixMatches.reserve(10);
@@ -100,11 +100,10 @@ public:
          }
 
          // Combine local results (critical section)
-#pragma omp critical
+        #pragma omp critical
          {
              resultTuples.insert(resultTuples.end(),make_move_iterator(localResults.begin()), make_move_iterator(localResults.end()));
          }
-
-         return resultTuples;
      }
+     return resultTuples;
  }
