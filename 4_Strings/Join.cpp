@@ -66,46 +66,73 @@ public:
             results.insert(results.end(), node->cast.begin(), node->cast.end());
         }
     }
-};
-//-------------------------------------------------------------------------------------------------------------------------
 
- vector<ResultRelation> performJoin(const vector<CastRelation>& castRelation,
-                                    const vector<TitleRelation>& titleRelation,
-                                    int numThreads) {
-        // Single-threaded Trie construction
-        Trie trie;
-        for (const auto& cast : castRelation) {
-            trie.insert(&cast);
+    void printTrie() const {
+        string currentPrefix;
+        printTrieRecursive(root.get(), currentPrefix);
+    }
+
+private:
+    void printTrieRecursive(const TrieNode* node, string& prefix) const {
+        if (!node) return;
+
+        if (node->endOfWord) {
+            cout << "Word: " << prefix << " | Cast count: " << node->cast.size() << '\n';
         }
 
-        vector<ResultRelation> resultTuples;
-        resultTuples.reserve(titleRelation.size() * 2);
+        for (int i = 0; i < TOTAL_CHILDREN; ++i) {
+            if (node->children[i]) {
+                char c = (i == OTHER_INDEX) ? '?' : static_cast<char>('a' + i);
+                prefix.push_back(c);
+                printTrieRecursive(node->children[i].get(), prefix);
+                prefix.pop_back();
+            }
+        }
+    }
+};
 
-        // Parallel section for title processing
-#pragma omp parallel num_threads(numThreads)
+//-------------------------------------------------------------------------------------------------------------------------
+
+vector<ResultRelation> performJoin(const vector<CastRelation>& castRelation,
+                                    const vector<TitleRelation>& titleRelation,
+                                    int numThreads) {
+    // Single-threaded Trie construction
+    Trie trie;
+    for (const auto& cast : castRelation) {
+        trie.insert(&cast);
+    }
+    trie.printTrie();
+
+    vector<ResultRelation> resultTuples;
+    resultTuples.reserve(titleRelation.size() * 2);
+
+    // Parallel section for title processing
+    #pragma omp parallel num_threads(numThreads)
+    {
+        // Thread-local storage for matches and results
+        vector<const CastRelation*> prefixMatches;
+        vector<ResultRelation> localResults;
+        localResults.reserve(titleRelation.size() * 2 / omp_get_num_threads());
+
+        #pragma omp for schedule(static)
+        for (size_t i = 0; i < titleRelation.size(); i++) {
+            const auto& title = titleRelation[i];
+            prefixMatches.clear();
+            trie.findPrefixMatches(title.title, prefixMatches);
+
+            for (const auto cast : prefixMatches) {
+                localResults.emplace_back(createResultTuple(*cast, title));
+            }
+        }
+
+        // Combine local results (critical section)
+        #pragma omp critical
         {
-            // Thread-local storage for matches and results
-            vector<ResultRelation> localResults;
-            localResults.reserve(titleRelation.size() * 2 / omp_get_num_threads());
+            resultTuples.insert(resultTuples.end(),
+                                make_move_iterator(localResults.begin()),
+                                make_move_iterator(localResults.end()));
+        }
+    }
 
-#pragma omp for schedule(static)
-            for (size_t i = 0; i < titleRelation.size(); i++) {
-                const auto& title = titleRelation[i];
-                vector<const CastRelation*> prefixMatches;
-                trie.findPrefixMatches(title.title, prefixMatches);
-
-                for (const auto cast : prefixMatches) {
-                    localResults.emplace_back(createResultTuple(*cast, title));
-                }
-            }
-
-            // Combine local results (critical section)
-#pragma omp critical{
-
-                resultTuples.insert(resultTuples.end(),
-                                    make_move_iterator(localResults.begin()),
-                                    make_move_iterator(localResults.end()));
-            }
-
-        return resultTuples;
- }
+    return resultTuples;
+}
