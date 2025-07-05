@@ -68,17 +68,8 @@ std::vector<TitleRelation> getHardcodedTitleRelations() {
 
     };
 }
-int safe_to_lower(char c) noexcept {
-    char d = static_cast<char>(tolower(static_cast<unsigned char>(c)));
-    if (d >= 'a' && d <= 'z')
-        return d - 'a';
-    return 27;
-
-}
 
 int main() {
-    std::cout << safe_to_lower('%') << std::endl;
-    std::cout << safe_to_lower('&') << std::endl;
     // Join durchführen
     std::vector<CastRelation> castRelations = getHardcodedCastRelations();
     std::vector<TitleRelation> titleRelations = getHardcodedTitleRelations();
