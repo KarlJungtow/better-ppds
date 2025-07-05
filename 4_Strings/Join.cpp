@@ -42,7 +42,7 @@ public:
         node->cast.emplace_back(cast);
     }
 
-    void find(const TitleRelation* title, vector<CastRelation*>& result) const
+    void find(const TitleRelation* title, vector<CastRelation*>& result) const {
         TrieNode* node = root;
         for (auto c : title->title) {
             int index = tolower(static_cast<unsigned char>(c)) - 'a';
@@ -92,12 +92,12 @@ std::vector<ResultRelation> performJoin(const std::vector<CastRelation>& castRel
 
 #pragma omp for schedule(dynamic)
         for (auto title : titleRelation) {
-            vector<CastRelation> casts;
+            vector<CastRelation*> casts;
             casts.reserve(10);
             trie->find(&title, casts);
 
             for (auto element : casts) {
-                localResults.emplace_back(createResultTuple(element, title));
+                localResults.emplace_back(createResultTuple(*element, title));
             }
         }
     }
