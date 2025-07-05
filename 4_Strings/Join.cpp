@@ -40,18 +40,22 @@ public:
 
     void insert(const CastRelation* cast) {
         TrieNode* node = root.get();
+        //Nutzen string_view statt string für Performance, da es keine Kopie erstellt
         string_view note(cast->note);
 
         for (char c : note) {
             int index = charToIndex(c);
 
+            // Wenn Node noch nicht existiert, kreiere sie
             if (!node->children[index]) {
                 node->children[index] = make_unique<TrieNode>();
             }
 
+            // Gehe zur nächsten Node
             node = node->children[index].get();
         }
 
+        // Setze am Ende Cast als pointer hin
         node->endOfWord = true;
         node->cast.push_back(cast);
     }
