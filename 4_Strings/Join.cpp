@@ -2,21 +2,12 @@
 #include <vector>
 #include <memory>
 #include <cctype>
-#include <algorithm>
-#include <unordered_map>
-#include <functional>
-#include <string_view>
 using namespace std;
 
 // Konstanten für Trie-Konfiguration
 static constexpr int ALPHABET_SIZE = 26;
 static constexpr int OTHER_INDEX = ALPHABET_SIZE;
 static constexpr int TOTAL_CHILDREN = ALPHABET_SIZE + 1;
-
-// Hilfsfunktion für sichere Zeichenkonvertierung
-inline char safe_to_lower(char c) noexcept {
-    return static_cast<char>(tolower(c));
-}
 
 class Trie {
 private:
@@ -28,7 +19,7 @@ private:
 
     unique_ptr<TrieNode> root;
 
-    int charToIndex(char c) const noexcept {
+    static int charToIndex (char c){
         c = tolower(c);
         if (c >= 'a' && c <= 'z') {
             return c - 'a';
@@ -38,13 +29,10 @@ private:
 
 public:
     Trie() : root(make_unique<TrieNode>()) {}
-
-    void insert(const CastRelation* cast) {
+      void insert(const CastRelation* cast) const {
         TrieNode* node = root.get();
-        //Nutzen string_view statt string für Performance, da es keine Kopie erstellt
-        string_view note(cast->note);
 
-        for (char c : note) {
+        for (char c : cast->note) {
             int index = charToIndex(c);
 
             // Wenn Node noch nicht existiert, kreiere sie
