@@ -1,0 +1,6 @@
+/home/karl/Desktop/better-ppds/4_Strings/build/CMakeFiles/rebuild_cache.dir
+/home/karl/Desktop/better-ppds/4_Strings/build/CMakeFiles/edit_cache.dir
+/home/karl/Desktop/better-ppds/4_Strings/build/CMakeFiles/JoinTest.dir
+/home/karl/Desktop/better-ppds/4_Strings/build/CMakeFiles/JoinExecutable.dir
+/home/karl/Desktop/better-ppds/4_Strings/build/CMakeFiles/JoinUtils.dir
+/home/karl/Desktop/better-ppds/4_Strings/build/CMakeFiles/googletest.dir

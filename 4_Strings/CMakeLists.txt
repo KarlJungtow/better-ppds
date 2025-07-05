@@ -1,22 +1,6 @@
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-
-#    https://www.apache.org/licenses/LICENSE-2.0
-
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
-cmake_minimum_required(VERSION 3.21.0)
-get_filename_component(PROJECT_ROOT ${CMAKE_SOURCE_DIR} NAME)
-set(PROJECT_NAME "PPDS_${PROJECT_ROOT}")
-set(PROJECT_EXECUTABLE "${PROJECT_ROOT}_EXECUTABLE")
-message("Project name is: ${PROJECT_NAME}")
-
-project(${PROJECT_NAME} VERSION 1.0.0)
+# Ändere die Mindestversion auf 3.16
+cmake_minimum_required(VERSION 3.16.0)
+project(PPDS_Strings VERSION 1.0.0)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -36,58 +20,81 @@ if(NOT DEFINED SOURCE_DIRECTORY)
     set(SOURCE_DIRECTORY "${CMAKE_SOURCE_DIR}/")
 endif()
 
-# Load gtest
-include(FetchContent)
+# Ältere GTest-Integration für CMake < 3.11
 include(ExternalProject)
 
-FetchContent_Declare(
-    googletest
-    GIT_REPOSITORY https://github.com/google/googletest
-    GIT_TAG        v1.14.0
-    )
+# Manuelle GTest-Integration
+ExternalProject_Add(
+        googletest
+        GIT_REPOSITORY https://github.com/google/googletest
+        GIT_TAG release-1.14.0
+        PREFIX ${CMAKE_CURRENT_BINARY_DIR}/gtest
+        # Deaktiviere Tests und Beispiele
+        CMAKE_ARGS -DCMAKE_BUILD_TYPE=Release -DBUILD_GMOCK=ON -DINSTALL_GTEST=OFF -DBUILD_TESTING=OFF
+        # Baue nur gtest und gmock
+        BUILD_BYPRODUCTS
+        ${CMAKE_CURRENT_BINARY_DIR}/gtest/src/googletest-build/googlemock/libgmock.a
+        ${CMAKE_CURRENT_BINARY_DIR}/gtest/src/googletest-build/googlemock/libgmock_main.a
+        ${CMAKE_CURRENT_BINARY_DIR}/gtest/src/googletest-build/googletest/libgtest.a
+        ${CMAKE_CURRENT_BINARY_DIR}/gtest/src/googletest-build/googletest/libgtest_main.a
+)
 
-FetchContent_GetProperties(googletest)
-if(NOT googletest_POPULATED)
-    FetchContent_Populate(googletest)
-    set(BUILD_SHARED_LIBS TRUE)  # Forces shared libraries, which implies -fPIC
-    add_subdirectory(${googletest_SOURCE_DIR} ${googletest_BINARY_DIR})
-endif()
-FetchContent_MakeAvailable(googletest)
+# Include-Verzeichnisse
+set(GTEST_INCLUDE_DIRS ${CMAKE_CURRENT_BINARY_DIR}/gtest/src/googletest/googletest/include)
+set(GMOCK_INCLUDE_DIRS ${CMAKE_CURRENT_BINARY_DIR}/gtest/src/googletest/googlemock/include)
 
-# Define the shared library
-add_library(${PROJECT_ROOT} SHARED Join.cpp)
+# Bibliothekspfade
+set(GTEST_LIBRARY ${CMAKE_CURRENT_BINARY_DIR}/gtest/src/googletest-build/lib/libgtest.a)
+set(GTEST_MAIN_LIBRARY ${CMAKE_CURRENT_BINARY_DIR}/gtest/src/googletest-build/lib/libgtest_main.a)
+set(GMOCK_LIBRARY ${CMAKE_CURRENT_BINARY_DIR}/gtest/src/googletest-build/lib/libgmock.a)
+set(GMOCK_MAIN_LIBRARY ${CMAKE_CURRENT_BINARY_DIR}/gtest/src/googletest-build/lib/libgmock_main.a)
 
-# Define the executable target that uses the shared library
-add_executable(${PROJECT_EXECUTABLE} Join.cpp)
+# Definiere die Bibliotheken
+add_library(gtest STATIC IMPORTED)
+set_property(TARGET gtest PROPERTY IMPORTED_LOCATION ${GTEST_LIBRARY})
+add_dependencies(gtest googletest)
 
-# Link with Libraries
+add_library(gtest_main STATIC IMPORTED)
+set_property(TARGET gtest_main PROPERTY IMPORTED_LOCATION ${GTEST_MAIN_LIBRARY})
+add_dependencies(gtest_main googletest)
+
+add_library(gmock STATIC IMPORTED)
+set_property(TARGET gmock PROPERTY IMPORTED_LOCATION ${GMOCK_LIBRARY})
+add_dependencies(gmock googletest)
+
+add_library(gmock_main STATIC IMPORTED)
+set_property(TARGET gmock_main PROPERTY IMPORTED_LOCATION ${GMOCK_MAIN_LIBRARY})
+add_dependencies(gmock_main googletest)
+
+# Finde OpenMP
 find_package(OpenMP REQUIRED)
-if (OpenMP_CXX_FOUND)
-    message(STATUS "OpenMP found")
-    target_link_libraries(${PROJECT_ROOT} PUBLIC OpenMP::OpenMP_CXX gtest_main)
-    target_link_libraries(${PROJECT_EXECUTABLE} OpenMP::OpenMP_CXX gtest_main)
-else (OpenMP_CXX_FOUND)
-    message(STATUS "OpenMP not found")
-    message(STATUS "On Ubuntu, install the package by the following command!")
-    message(STATUS "sudo apt install libomp-dev")
-    target_link_libraries(${PROJECT_ROOT} PUBLIC gtest_main)
-    target_link_libraries(${PROJECT_EXECUTABLE} gtest_main)
-endif (OpenMP_CXX_FOUND)
 
-# If necessary, include gtest include directories
-target_include_directories(${PROJECT_ROOT} PRIVATE ${gtest_SOURCE_DIR}/include ${gtest_BINARY_DIR})
-target_include_directories(${PROJECT_EXECUTABLE} PRIVATE ${gtest_SOURCE_DIR}/include ${gtest_BINARY_DIR})
+# Hauptbibliothek
+add_library(JoinUtils SHARED Join.cpp JoinUtils.hpp)
 
-# Add compile definitions
-target_compile_definitions(${PROJECT_ROOT} PRIVATE
-    DATA_DIRECTORY="${DATA_DIRECTORY}"
-    SOURCE_DIRECTORY="${SOURCE_DIRECTORY}"
-    )
+# Hauptexecutable
+add_executable(JoinExecutable Join.cpp)
+target_link_libraries(JoinExecutable PRIVATE JoinUtils OpenMP::OpenMP_CXX)
 
-target_compile_definitions(${PROJECT_EXECUTABLE} PRIVATE
-    DATA_DIRECTORY="${DATA_DIRECTORY}"
-    SOURCE_DIRECTORY="${SOURCE_DIRECTORY}"
-    )
+# Test executable
+add_executable(JoinTest string_tests.cpp)
+target_include_directories(JoinTest PRIVATE ${GTEST_INCLUDE_DIRS} ${GMOCK_INCLUDE_DIRS})
+target_link_libraries(JoinTest PRIVATE
+        JoinUtils
+        gtest
+        gtest_main
+        gmock
+        gmock_main
+        OpenMP::OpenMP_CXX
+)
 
-add_executable(JoinTest JoinTest.cpp)
-target_link_libraries(JoinTest PRIVATE ${LIBS})
+# Füge Compiler-Definitionen hinzu
+target_compile_definitions(JoinUtils PRIVATE
+        DATA_DIRECTORY="${DATA_DIRECTORY}"
+        SOURCE_DIRECTORY="${SOURCE_DIRECTORY}"
+)
+
+target_compile_definitions(JoinTest PRIVATE
+        DATA_DIRECTORY="${DATA_DIRECTORY}"
+        SOURCE_DIRECTORY="${SOURCE_DIRECTORY}"
+)

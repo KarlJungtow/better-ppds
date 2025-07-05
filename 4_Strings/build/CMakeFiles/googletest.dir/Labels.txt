@@ -1,0 +1,13 @@
+# Target labels
+ googletest
+# Source files and their labels
+/home/karl/Desktop/better-ppds/4_Strings/build/CMakeFiles/googletest
+/home/karl/Desktop/better-ppds/4_Strings/build/CMakeFiles/googletest.rule
+/home/karl/Desktop/better-ppds/4_Strings/build/CMakeFiles/googletest-complete.rule
+/home/karl/Desktop/better-ppds/4_Strings/build/gtest/src/googletest-stamp/googletest-install.rule
+/home/karl/Desktop/better-ppds/4_Strings/build/gtest/src/googletest-stamp/googletest-mkdir.rule
+/home/karl/Desktop/better-ppds/4_Strings/build/gtest/src/googletest-stamp/googletest-download.rule
+/home/karl/Desktop/better-ppds/4_Strings/build/gtest/src/googletest-stamp/googletest-update.rule
+/home/karl/Desktop/better-ppds/4_Strings/build/gtest/src/googletest-stamp/googletest-patch.rule
+/home/karl/Desktop/better-ppds/4_Strings/build/gtest/src/googletest-stamp/googletest-configure.rule
+/home/karl/Desktop/better-ppds/4_Strings/build/gtest/src/googletest-stamp/googletest-build.rule

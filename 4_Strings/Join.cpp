@@ -1,8 +1,6 @@
 #include "JoinUtils.hpp"
 
 #include <vector>
-#include <omp.h>
-
 using namespace std;
 
 class TrieNode {
@@ -42,6 +40,7 @@ public:
             if (!node->children[index]) {
                 node->children[index] = new TrieNode();
             }
+
             node = node->children[index];
         }
 
@@ -59,6 +58,7 @@ public:
                 index = 26;
             }
 
+            // If this node ends a word, include all cast entries
             if (node->endOfWord) {
                 result.insert(result.end(), node->cast.begin(), node->cast.end());
             }
@@ -70,6 +70,7 @@ public:
             node = node->children[index];
         }
 
+        // Check the last node for exact match
         if (node->endOfWord) {
             result.insert(result.end(), node->cast.begin(), node->cast.end());
         }
@@ -94,33 +95,17 @@ std::vector<ResultRelation> performJoin(const std::vector<CastRelation>& castRel
                                         int numThreads) {
     std::vector<ResultRelation> resultTuples;
 
-    omp_set_num_threads(numThreads);
-
     Trie* trie = new Trie();
+
     for (const auto& cast : castRelation) {
         trie->insert(const_cast<CastRelation*>(&cast));
     }
 
-    std::vector<std::vector<ResultRelation>> threadLocalResults(numThreads);
-
-#pragma omp parallel
-    {
-        int threadId = omp_get_thread_num();
-        std::vector<ResultRelation>& localResults = threadLocalResults[threadId];
-
-#pragma omp for schedule(dynamic)
-        for (const auto & title : titleRelation) {
-            vector<CastRelation*> casts = trie->find(const_cast<TitleRelation*>(&title));
-
-            for (auto element : casts) {
-                localResults.emplace_back(createResultTuple(*element, title));
-            }
+    for (const auto& title : titleRelation) {
+        vector<CastRelation*> casts = trie->find(const_cast<TitleRelation*>(&title));
+        for (auto element : casts) {
+            resultTuples.emplace_back(createResultTuple(*element, title));
         }
-    }
-
-    // Flatten results
-    for (const auto& localVec : threadLocalResults) {
-        resultTuples.insert(resultTuples.end(), localVec.begin(), localVec.end());
     }
 
     delete trie;
