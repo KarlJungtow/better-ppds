@@ -74,27 +74,34 @@ public:
 };
 
 //-------------------------------------------------------------------------------------------------------------------------
-std::vector<ResultRelation> performJoin(const std::vector<CastRelation>& castRelation, const std::vector<TitleRelation>& titleRelation, int numThreads) {
+std::vector<ResultRelation> performJoin(const std::vector<CastRelation>& castRelation,
+                                       const std::vector<TitleRelation>& titleRelation,
+                                       int numThreads) {
     omp_set_num_threads(numThreads);
-    vector<ResultRelation> resultTuples;
-    Trie* trie = new Trie();
+    std::vector<ResultRelation> resultTuples;
+    Trie trie;  // Stack statt Heap!
+
+    // Trie aufbauen (single-threaded)
     for (const auto& cast : castRelation) {
-        trie->insert(const_cast<CastRelation*>(&cast));
+        trie.insert(const_cast<CastRelation*>(&cast));  // Workaround
     }
 
-    vector<vector<ResultRelation>> threadLocalResults(numThreads);
+    // Thread-lokale Ergebnisse
+    std::vector<std::vector<ResultRelation>> threadLocalResults(numThreads);
 
 #pragma omp parallel num_threads(numThreads)
-
     {
         int tid = omp_get_thread_num();
-        vector<ResultRelation>& localResults = threadLocalResults[tid];
+        auto& localResults = threadLocalResults[tid];
+
+        // Thread-lokaler Puffer für Casts (einmal initialisieren)
+        thread_local std::vector<CastRelation*> casts;
+        casts.reserve(10);
 
 #pragma omp for schedule(dynamic)
-        for (auto title : titleRelation) {
-            vector<CastRelation*> casts;
-            casts.reserve(10);
-            trie->find(&title, casts);
+        for (const auto& title : titleRelation) {
+            casts.clear();
+            trie.find(&title, casts);
 
             for (auto element : casts) {
                 localResults.emplace_back(createResultTuple(*element, title));
@@ -102,11 +109,17 @@ std::vector<ResultRelation> performJoin(const std::vector<CastRelation>& castRel
         }
     }
 
-    // Flatten threadLocalResults into resultTuples
-    for (auto& localVec : threadLocalResults) {
-        resultTuples.insert(resultTuples.end(), localVec.begin(), localVec.end());
+    // Ergebnisse zusammenführen (mit move)
+    size_t totalSize = 0;
+    for (const auto& vec : threadLocalResults) {
+        totalSize += vec.size();
     }
+    resultTuples.reserve(totalSize);
 
-    delete trie;
+    for (auto& localVec : threadLocalResults) {
+        resultTuples.insert(resultTuples.end(),
+                          std::make_move_iterator(localVec.begin()),
+                          std::make_move_iterator(localVec.end()));
+    }
     return resultTuples;
 }
