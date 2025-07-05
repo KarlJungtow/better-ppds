@@ -1,113 +1,155 @@
 #include "JoinUtils.hpp"
-
 #include <vector>
+#include <memory>
+#include <cctype>
+#include <algorithm>
+#include <unordered_map>
+#include <functional>
+#include <string_view>
 using namespace std;
 
-class TrieNode {
-public:
-    bool endOfWord;
-    TrieNode* children[27]{};
-    vector<CastRelation*> cast;
+// Konstanten für Trie-Konfiguration
+static constexpr int ALPHABET_SIZE = 26;
+static constexpr int OTHER_INDEX = ALPHABET_SIZE;
+static constexpr int TOTAL_CHILDREN = ALPHABET_SIZE + 1;
 
-    TrieNode() : endOfWord(false) {
-        for (auto& child : children) {
-            child = nullptr;
-        }
-    }
-};
+// Hilfsfunktion für sichere Zeichenkonvertierung
+inline char safe_to_lower(char c) noexcept {
+    return static_cast<char>(tolower(static_cast<unsigned char>(c)));
+}
 
 class Trie {
 private:
-    TrieNode* root;
+    struct TrieNode {
+        bool endOfWord = false;
+        vector<const CastRelation*> cast;
+        unique_ptr<TrieNode> children[TOTAL_CHILDREN];
+    };
+
+    unique_ptr<TrieNode> root;
+
+    int charToIndex(char c) const noexcept {
+        c = safe_to_lower(c);
+        if (c >= 'a' && c <= 'z')
+            return c - 'a';
+        return OTHER_INDEX;
+    }
 
 public:
-    Trie() {
-        root = new TrieNode();
-    }
+    Trie() : root(make_unique<TrieNode>()) {}
 
-    ~Trie() {
-        freeTrie(root);
-    }
+    void insert(const CastRelation* cast) {
+        TrieNode* node = root.get();
+        string_view note(cast->note);
 
-    void insert(CastRelation* cast) const {
-        TrieNode* node = root;
-        for (auto c : cast->note) {
-            int index = tolower(static_cast<unsigned char>(c)) - 'a';
-            if (index < 0 || index > 25) {
-                index = 26;
-            }
+        for (char c : note) {
+            int index = charToIndex(c);
 
             if (!node->children[index]) {
-                node->children[index] = new TrieNode();
+                node->children[index] = make_unique<TrieNode>();
             }
 
-            node = node->children[index];
+            node = node->children[index].get();
         }
 
         node->endOfWord = true;
-        node->cast.emplace_back(cast);
+        node->cast.push_back(cast);
     }
 
-    vector<CastRelation*> find(TitleRelation* title) const {
-        vector<CastRelation*> result;
-        TrieNode* node = root;
+    void findPrefixMatches(const string& prefix, vector<const CastRelation*>& results) const {
+        TrieNode* node = root.get();
 
-        for (auto c : title->title) {
-            int index = tolower(static_cast<unsigned char>(c)) - 'a';
-            if (index < 0 || index > 25) {
-                index = 26;
-            }
-
-            // If this node ends a word, include all cast entries
+        for (char c : prefix) {
+            // Füge alle passenden Einträge auf aktuellem Knoten hinzu
             if (node->endOfWord) {
-                result.insert(result.end(), node->cast.begin(), node->cast.end());
+                results.insert(results.end(), node->cast.begin(), node->cast.end());
             }
 
-            if (!node->children[index]) {
-                return result;
-            }
+            int index = charToIndex(c);
+            if (!node->children[index]) return;
 
-            node = node->children[index];
+            node = node->children[index].get();
         }
 
-        // Check the last node for exact match
+        // Füge Einträge des exakten Endknotens hinzu
         if (node->endOfWord) {
-            result.insert(result.end(), node->cast.begin(), node->cast.end());
+            results.insert(results.end(), node->cast.begin(), node->cast.end());
         }
-
-        return result;
-    }
-
-    static void freeTrie(TrieNode* node) {
-        for (auto& child : node->children) {
-            if (child != nullptr) {
-                freeTrie(child);
-            }
-        }
-        delete node;
     }
 };
 
 //-------------------------------------------------------------------------------------------------------------------------
 
-std::vector<ResultRelation> performJoin(const std::vector<CastRelation>& castRelation,
-                                        const std::vector<TitleRelation>& titleRelation,
-                                        int numThreads) {
-    std::vector<ResultRelation> resultTuples;
+vector<ResultRelation> performJoin2(const vector<CastRelation>& castRelation,
+                                    const vector<TitleRelation>& titleRelation,
+                                    int numThreads) {
+    vector<ResultRelation> resultTuples;
+    resultTuples.reserve(titleRelation.size() * 2); // Heuristische Reserve
 
-    Trie* trie = new Trie();
+    Trie trie;
 
+    // Trie mit Cast-Daten füllen
     for (const auto& cast : castRelation) {
-        trie->insert(const_cast<CastRelation*>(&cast));
+        trie.insert(&cast);
     }
 
+    // Titel durchsuchen und Matches sammeln
+    vector<const CastRelation*> prefixMatches;
     for (const auto& title : titleRelation) {
-        vector<CastRelation*> casts = trie->find(const_cast<TitleRelation*>(&title));
-        for (auto element : casts) {
-            resultTuples.emplace_back(createResultTuple(*element, title));
+        prefixMatches.clear();
+        trie.findPrefixMatches(title.title, prefixMatches);
+
+        for (const auto cast : prefixMatches) {
+            resultTuples.emplace_back(createResultTuple(*cast, title));
         }
     }
 
-    delete trie;
+    return resultTuples;
+}
+
+vector<ResultRelation> performJoin(const vector<CastRelation>& castRelation,
+                                   const vector<TitleRelation>& titleRelation,
+                                   int numThreads) {
+    vector<ResultRelation> resultTuples;
+    resultTuples.reserve(castRelation.size()); // Konservative Schätzung
+
+    for (const auto& cast : castRelation) {
+        const string_view note(cast.note);
+        const size_t noteLength = note.length();
+
+        for (const auto& title : titleRelation) {
+            const string_view titleStr(title.title);
+
+            // Vermeidet Buffer-Overflow und prüft Präfix
+            if (noteLength > titleStr.length()) continue;
+
+            bool match = true;
+            for (size_t i = 0; i < noteLength; ++i) {
+                if (safe_to_lower(note[i]) != safe_to_lower(titleStr[i])) {
+                    match = false;
+                    break;
+                }
+            }
+
+            if (match) {
+                resultTuples.emplace_back(createResultTuple(cast, title));
+            }
+        }
+    }
+
+    return resultTuples;
+}
+
+std::vector<ResultRelation> performJoin3(const std::vector<CastRelation>& castRelation,
+                                        const std::vector<TitleRelation>& titleRelation,
+                                        int numThreads) {
+    std::vector<ResultRelation> resultTuples;
+    for(auto cast : castRelation) {
+        for (auto title : titleRelation) {
+            if (strncasecmp(cast.note, title.title, strlen(cast.note))==0) {
+                resultTuples.push_back(createResultTuple(cast, title));
+            }
+        }
+    }
     return resultTuples;
 }

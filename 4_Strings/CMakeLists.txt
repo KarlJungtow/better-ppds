@@ -1,4 +1,3 @@
-# Ändere die Mindestversion auf 3.16
 cmake_minimum_required(VERSION 3.16.0)
 project(PPDS_Strings VERSION 1.0.0)
 
@@ -20,23 +19,21 @@ if(NOT DEFINED SOURCE_DIRECTORY)
     set(SOURCE_DIRECTORY "${CMAKE_SOURCE_DIR}/")
 endif()
 
-# Ältere GTest-Integration für CMake < 3.11
+# Manuelle GTest-Integration mit korrektem Tag
 include(ExternalProject)
 
-# Manuelle GTest-Integration
 ExternalProject_Add(
         googletest
         GIT_REPOSITORY https://github.com/google/googletest
-        GIT_TAG release-1.14.0
+        GIT_TAG v1.14.0  # Korrigierter Tag
         PREFIX ${CMAKE_CURRENT_BINARY_DIR}/gtest
-        # Deaktiviere Tests und Beispiele
         CMAKE_ARGS -DCMAKE_BUILD_TYPE=Release -DBUILD_GMOCK=ON -DINSTALL_GTEST=OFF -DBUILD_TESTING=OFF
-        # Baue nur gtest und gmock
         BUILD_BYPRODUCTS
         ${CMAKE_CURRENT_BINARY_DIR}/gtest/src/googletest-build/googlemock/libgmock.a
         ${CMAKE_CURRENT_BINARY_DIR}/gtest/src/googletest-build/googlemock/libgmock_main.a
         ${CMAKE_CURRENT_BINARY_DIR}/gtest/src/googletest-build/googletest/libgtest.a
         ${CMAKE_CURRENT_BINARY_DIR}/gtest/src/googletest-build/googletest/libgtest_main.a
+        INSTALL_COMMAND ""
 )
 
 # Include-Verzeichnisse
@@ -71,10 +68,6 @@ find_package(OpenMP REQUIRED)
 
 # Hauptbibliothek
 add_library(JoinUtils SHARED Join.cpp JoinUtils.hpp)
-
-# Hauptexecutable
-add_executable(JoinExecutable Join.cpp)
-target_link_libraries(JoinExecutable PRIVATE JoinUtils OpenMP::OpenMP_CXX)
 
 # Test executable
 add_executable(JoinTest string_tests.cpp)
