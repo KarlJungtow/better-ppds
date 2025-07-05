@@ -15,7 +15,7 @@ static constexpr int TOTAL_CHILDREN = ALPHABET_SIZE + 1;
 
 // Hilfsfunktion für sichere Zeichenkonvertierung
 inline char safe_to_lower(char c) noexcept {
-    return static_cast<char>(tolower(c));
+    return static_cast<char>(tolower(static_cast<unsigned char>(c)));
 }
 
 class Trie {
@@ -29,10 +29,9 @@ private:
     unique_ptr<TrieNode> root;
 
     int charToIndex(char c) const noexcept {
-        c = tolower(c);
-        if (c >= 'a' && c <= 'z') {
+        c = safe_to_lower(c);
+        if (c >= 'a' && c <= 'z')
             return c - 'a';
-        }
         return OTHER_INDEX;
     }
 
@@ -67,9 +66,7 @@ public:
         for (char c : prefix) {
             // Füge alle passenden Einträge auf aktuellem Knoten hinzu
             if (node->endOfWord) {
-                for (auto element : node->cast) {
-                    results.emplace_back(element);
-                }
+                results.insert(results.end(), node->cast.begin(), node->cast.end());
             }
 
             int index = charToIndex(c);
@@ -80,47 +77,14 @@ public:
 
         // Füge Einträge des exakten Endknotens hinzu
         if (node->endOfWord) {
-            for (auto element : node->cast) {
-                results.emplace_back(element);
-            }
+            results.insert(results.end(), node->cast.begin(), node->cast.end());
         }
     }
-    void printTrie() const {
-        string currentPrefix;
-        printTrieRecursive(root.get(), currentPrefix);
-    }
-
-private:
-    void printTrieRecursive(const TrieNode* node, string& prefix) const {
-        if (!node) return;
-
-        if (node->endOfWord) {
-            // Print the prefix and optionally additional cast information
-            cout << "Word: " << prefix << " | Cast count: " << node->cast.size() << '\n';
-        }
-
-        for (int i = 0; i < TOTAL_CHILDREN; ++i) {
-            if (node->children[i]) {
-                char c;
-                if (i == OTHER_INDEX) {
-                    c = '?';  // or some placeholder for non-alphabetic characters
-                } else {
-                    c = static_cast<char>('a' + i);
-                }
-
-                prefix.push_back(c);
-                printTrieRecursive(node->children[i].get(), prefix);
-                prefix.pop_back(); // backtrack
-            }
-        }
-    }
-
-
 };
 
 //-------------------------------------------------------------------------------------------------------------------------
 
-vector<ResultRelation> performJoin(const vector<CastRelation>& castRelation,
+vector<ResultRelation> performJoin2(const vector<CastRelation>& castRelation,
                                     const vector<TitleRelation>& titleRelation,
                                     int numThreads) {
     vector<ResultRelation> resultTuples;
@@ -132,7 +96,7 @@ vector<ResultRelation> performJoin(const vector<CastRelation>& castRelation,
     for (const auto& cast : castRelation) {
         trie.insert(&cast);
     }
-    trie.printTrie();
+
     // Titel durchsuchen und Matches sammeln
     vector<const CastRelation*> prefixMatches;
     for (const auto& title : titleRelation) {
@@ -144,5 +108,52 @@ vector<ResultRelation> performJoin(const vector<CastRelation>& castRelation,
         }
     }
 
+    return resultTuples;
+}
+
+vector<ResultRelation> performJoin(const vector<CastRelation>& castRelation,
+                                   const vector<TitleRelation>& titleRelation,
+                                   int numThreads) {
+    vector<ResultRelation> resultTuples;
+    resultTuples.reserve(castRelation.size()); // Konservative Schätzung
+
+    for (const auto& cast : castRelation) {
+        const string_view note(cast.note);
+        const size_t noteLength = note.length();
+
+        for (const auto& title : titleRelation) {
+            const string_view titleStr(title.title);
+
+            // Vermeidet Buffer-Overflow und prüft Präfix
+            if (noteLength > titleStr.length()) continue;
+
+            bool match = true;
+            for (size_t i = 0; i < noteLength; ++i) {
+                if (safe_to_lower(note[i]) != safe_to_lower(titleStr[i])) {
+                    match = false;
+                    break;
+                }
+            }
+
+            if (match) {
+                resultTuples.emplace_back(createResultTuple(cast, title));
+            }
+        }
+    }
+
+    return resultTuples;
+}
+
+std::vector<ResultRelation> performJoin3(const std::vector<CastRelation>& castRelation,
+                                        const std::vector<TitleRelation>& titleRelation,
+                                        int numThreads) {
+    std::vector<ResultRelation> resultTuples;
+    for(auto cast : castRelation) {
+        for (auto title : titleRelation) {
+            if (strncasecmp(cast.note, title.title, strlen(cast.note))==0) {
+                resultTuples.push_back(createResultTuple(cast, title));
+            }
+        }
+    }
     return resultTuples;
 }
