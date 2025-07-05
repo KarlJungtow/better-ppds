@@ -72,39 +72,38 @@ public:
  vector<ResultRelation> performJoin(const vector<CastRelation>& castRelation,
                                     const vector<TitleRelation>& titleRelation,
                                     int numThreads) {
-     // Single-threaded Trie construction
-     Trie trie;
-     for (const auto& cast : castRelation) {
-         trie.insert(&cast);
-     }
+        // Single-threaded Trie construction
+        Trie trie;
+        for (const auto& cast : castRelation) {
+            trie.insert(&cast);
+        }
 
-     vector<ResultRelation> resultTuples;
-     resultTuples.reserve(titleRelation.size() * 2);
+        vector<ResultRelation> resultTuples;
+        resultTuples.reserve(titleRelation.size() * 2);
 
-     // Parallel section for title processing
+        // Parallel section for title processing
 #pragma omp parallel num_threads(numThreads)
-     {
-         // Thread-local storage for matches and results
-         vector<ResultRelation> localResults;
-         localResults.reserve(titleRelation.size() * 2 / omp_get_num_threads());
+        {
+            // Thread-local storage for matches and results
+            vector<ResultRelation> localResults;
+            localResults.reserve(titleRelation.size() * 2 / omp_get_num_threads());
 
 #pragma omp for schedule(static)
-         for (const auto & title : titleRelation) {
-             vector<const CastRelation*> prefixMatches;
-             prefixMatches.reserve(10);
-             trie.findPrefixMatches(title.title, prefixMatches);
+            for (const auto & title : titleRelation) {
+                vector<const CastRelation*> prefixMatches;
+                prefixMatches.reserve(10);
+                trie.findPrefixMatches(title.title, prefixMatches);
 
-             for (const auto cast : prefixMatches) {
-                 localResults.emplace_back(createResultTuple(*cast, title));
-             }
-         }
+                for (const auto cast : prefixMatches) {
+                    localResults.emplace_back(createResultTuple(*cast, title));
+                }
+            }
 
-         // Combine local results (critical section)
+            // Combine local results (critical section)
 #pragma omp critical
-         {
-             resultTuples.insert(resultTuples.end(),make_move_iterator(localResults.begin()), make_move_iterator(localResults.end()));
-         }
+            {
+                resultTuples.insert(resultTuples.end(),make_move_iterator(localResults.begin()), make_move_iterator(localResults.end()));
+            }
 
-         return resultTuples;
-     }
+        return resultTuples;
  }
