@@ -1,15 +1,18 @@
 #include "JoinUtils.hpp"
+
 #include <vector>
 #include <omp.h>
+
 using namespace std;
 
 class TrieNode {
 public:
     bool endOfWord;
     TrieNode* children[27]{};
-    vector<const CastRelation*> cast;  // Const-correctness
+    vector<CastRelation*> cast;
+
     TrieNode() : endOfWord(false) {
-        for(auto & child : children) {
+        for (auto& child : children) {
             child = nullptr;
         }
     }
@@ -20,87 +23,94 @@ private:
     TrieNode* root;
 
 public:
-    Trie() { root = new TrieNode(); }
-    ~Trie() { freeTrie(root); }
+    Trie() {
+        root = new TrieNode();
+    }
 
-    void insert(const CastRelation* cast) {  // Const-correctness
+    ~Trie() {
+        freeTrie(root);
+    }
+
+    void insert(CastRelation* cast) const {
         TrieNode* node = root;
-        for(auto c : cast->note) {
+        for (auto c : cast->note) {
             int index = tolower(static_cast<unsigned char>(c)) - 'a';
-            if (index < 0 || index > 25) index = 26;
+            if (index < 0 || index > 25) {
+                index = 26;
+            }
 
-            if(!node->children[index]) {
+            if (!node->children[index]) {
                 node->children[index] = new TrieNode();
             }
             node = node->children[index];
         }
+
         node->endOfWord = true;
         node->cast.emplace_back(cast);
     }
+
+    vector<CastRelation*> find(TitleRelation* title) const {
+        vector<CastRelation*> result;
         TrieNode* node = root;
+
         for (auto c : title->title) {
             int index = tolower(static_cast<unsigned char>(c)) - 'a';
-            if (index < 0 || index > 25) index = 26;
+            if (index < 0 || index > 25) {
+                index = 26;
+            }
 
             if (node->endOfWord) {
-
                 result.insert(result.end(), node->cast.begin(), node->cast.end());
             }
 
-            if (!node->children[index]) return;
+            if (!node->children[index]) {
+                return result;
+            }
+
             node = node->children[index];
         }
+
         if (node->endOfWord) {
             result.insert(result.end(), node->cast.begin(), node->cast.end());
         }
+
+        return result;
     }
 
     static void freeTrie(TrieNode* node) {
-        for (auto & child : node->children) {
-            if (child) {
+        for (auto& child : node->children) {
+            if (child != nullptr) {
                 freeTrie(child);
-
-
-    static void  freeTrie(TrieNode* node) {
-        for (auto & i : node->children) {
-            if (i != nullptr) {
-                freeTrie(i);
             }
         }
         delete node;
     }
 };
 
+//-------------------------------------------------------------------------------------------------------------------------
+
 std::vector<ResultRelation> performJoin(const std::vector<CastRelation>& castRelation,
-                                       const std::vector<TitleRelation>& titleRelation,
-                                       int numThreads) {
-    omp_set_num_threads(numThreads);
+                                        const std::vector<TitleRelation>& titleRelation,
+                                        int numThreads) {
     std::vector<ResultRelation> resultTuples;
 
-    Trie trie;  // Stack-Allokation statt Heap!
+    omp_set_num_threads(numThreads);
 
-    // Trie aufbauen (single-threaded)
+    Trie* trie = new Trie();
     for (const auto& cast : castRelation) {
-        trie.insert(const_cast<CastRelation*>(&cast));
+        trie->insert(const_cast<CastRelation*>(&cast));
     }
 
-    // Thread-lokale Ergebnisse
     std::vector<std::vector<ResultRelation>> threadLocalResults(numThreads);
 
-    #pragma omp parallel num_threads(numThreads)
+#pragma omp parallel
     {
-        const int tid = omp_get_thread_num();
-        auto& localResults = threadLocalResults[tid];
+        int threadId = omp_get_thread_num();
+        std::vector<ResultRelation>& localResults = threadLocalResults[threadId];
 
-        // Thread-lokaler Puffer für Casts
-        std::vector<const CastRelation*> casts;
-        casts.reserve(20);  // Höhere Reserve für mehr Treffer
-
-        #pragma omp for schedule(static)
-        for (size_t i = 0; i < titleRelation.size(); i++) {
-            const auto& title = titleRelation[i];  // Referenz verwenden
-            casts.clear();
-            trie.find(&title, casts);
+#pragma omp for schedule(dynamic)
+        for (const auto & title : titleRelation) {
+            vector<CastRelation*> casts = trie->find(const_cast<TitleRelation*>(&title));
 
             for (auto element : casts) {
                 localResults.emplace_back(createResultTuple(*element, title));
@@ -108,19 +118,11 @@ std::vector<ResultRelation> performJoin(const std::vector<CastRelation>& castRel
         }
     }
 
-
-    // Ergebnisse zusammenführen (mit move)
-    size_t totalSize = 0;
-    for (const auto& vec : threadLocalResults) {
-        totalSize += vec.size();
-    }
-    resultTuples.reserve(totalSize);
-
-    for (auto& localVec : threadLocalResults) {
-        resultTuples.insert(resultTuples.end(),
-                          std::make_move_iterator(localVec.begin()),
-                          std::make_move_iterator(localVec.end()));
+    // Flatten results
+    for (const auto& localVec : threadLocalResults) {
+        resultTuples.insert(resultTuples.end(), localVec.begin(), localVec.end());
     }
 
+    delete trie;
     return resultTuples;
 }

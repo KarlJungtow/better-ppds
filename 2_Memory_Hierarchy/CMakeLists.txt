@@ -61,6 +61,7 @@ add_library(${PROJECT_ROOT} SHARED Join.cpp)
 add_executable(${PROJECT_EXECUTABLE} Join.cpp
         ../4_Strings/Trie.cpp
         ../4_Strings/string_tests.cpp
+        ../4_Strings/string_tests.cpp
 )
 
 # Link with Libraries
