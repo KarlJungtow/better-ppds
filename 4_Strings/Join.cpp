@@ -37,14 +37,13 @@ public:
         node->endOfWord = true;
         node->cast.emplace_back(cast);
     }
-
-    void find(const TitleRelation* title, vector<const CastRelation*>& result) const {
         TrieNode* node = root;
         for (auto c : title->title) {
             int index = tolower(static_cast<unsigned char>(c)) - 'a';
             if (index < 0 || index > 25) index = 26;
 
             if (node->endOfWord) {
+
                 result.insert(result.end(), node->cast.begin(), node->cast.end());
             }
 
@@ -60,6 +59,12 @@ public:
         for (auto & child : node->children) {
             if (child) {
                 freeTrie(child);
+
+
+    static void  freeTrie(TrieNode* node) {
+        for (auto & i : node->children) {
+            if (i != nullptr) {
+                freeTrie(i);
             }
         }
         delete node;
@@ -72,10 +77,11 @@ std::vector<ResultRelation> performJoin(const std::vector<CastRelation>& castRel
     omp_set_num_threads(numThreads);
     std::vector<ResultRelation> resultTuples;
 
-    // Trie erstellen und füllen (SINGLE-THREADED)
-    Trie trie;
+    Trie trie;  // Stack-Allokation statt Heap!
+
+    // Trie aufbauen (single-threaded)
     for (const auto& cast : castRelation) {
-        trie.insert(&cast);  // Kein const_cast nötig
+        trie.insert(const_cast<CastRelation*>(&cast));
     }
 
     // Thread-lokale Ergebnisse
@@ -102,7 +108,8 @@ std::vector<ResultRelation> performJoin(const std::vector<CastRelation>& castRel
         }
     }
 
-    // Ergebnisse zusammenführen
+
+    // Ergebnisse zusammenführen (mit move)
     size_t totalSize = 0;
     for (const auto& vec : threadLocalResults) {
         totalSize += vec.size();
