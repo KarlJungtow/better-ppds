@@ -42,7 +42,7 @@ public:
         node->cast.emplace_back(cast);
     }
 
-    void find(const TitleRelation* title, vector<CastRelation>& result) const {
+    void find(const TitleRelation* title, vector<CastRelation*>& result) const
         TrieNode* node = root;
         for (auto c : title->title) {
             int index = tolower(static_cast<unsigned char>(c)) - 'a';
@@ -85,8 +85,10 @@ std::vector<ResultRelation> performJoin(const std::vector<CastRelation>& castRel
     vector<vector<ResultRelation>> threadLocalResults(numThreads);
 
 #pragma omp parallel num_threads(numThreads)
+
     {
-        vector<ResultRelation>& localResults = threadLocalResults[numThreads];
+        int tid = omp_get_thread_num();
+        vector<ResultRelation>& localResults = threadLocalResults[tid];
 
 #pragma omp for schedule(dynamic)
         for (auto title : titleRelation) {
@@ -98,11 +100,11 @@ std::vector<ResultRelation> performJoin(const std::vector<CastRelation>& castRel
                 localResults.emplace_back(createResultTuple(element, title));
             }
         }
+    }
 
-        // Flatten threadLocalResults into resultTuples
-        for (auto& localVec : threadLocalResults) {
-            resultTuples.insert(resultTuples.end(), localVec.begin(), localVec.end());
-        }
+    // Flatten threadLocalResults into resultTuples
+    for (auto& localVec : threadLocalResults) {
+        resultTuples.insert(resultTuples.end(), localVec.begin(), localVec.end());
     }
 
     delete trie;
