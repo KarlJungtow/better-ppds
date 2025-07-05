@@ -85,37 +85,6 @@ public:
             }
         }
     }
-    void printTrie() const {
-        string currentPrefix;
-        printTrieRecursive(root.get(), currentPrefix);
-    }
-
-private:
-    void printTrieRecursive(const TrieNode* node, string& prefix) const {
-        if (!node) return;
-
-        if (node->endOfWord) {
-            // Print the prefix and optionally additional cast information
-            cout << "Word: " << prefix << " | Cast count: " << node->cast.size() << '\n';
-        }
-
-        for (int i = 0; i < TOTAL_CHILDREN; ++i) {
-            if (node->children[i]) {
-                char c;
-                if (i == OTHER_INDEX) {
-                    c = '?';  // or some placeholder for non-alphabetic characters
-                } else {
-                    c = static_cast<char>('a' + i);
-                }
-
-                prefix.push_back(c);
-                printTrieRecursive(node->children[i].get(), prefix);
-                prefix.pop_back(); // backtrack
-            }
-        }
-    }
-
-
 };
 
 //-------------------------------------------------------------------------------------------------------------------------
@@ -132,7 +101,6 @@ vector<ResultRelation> performJoin(const vector<CastRelation>& castRelation,
     for (const auto& cast : castRelation) {
         trie.insert(&cast);
     }
-    trie.printTrie();
     // Titel durchsuchen und Matches sammeln
     vector<const CastRelation*> prefixMatches;
     for (const auto& title : titleRelation) {
