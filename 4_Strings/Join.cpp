@@ -3,10 +3,11 @@
 #include <memory>
 #include <cctype>
 #include <string_view>
-#include <string_view>
+#include <string>
+#include <omp.h>  // Include OpenMP header
 using namespace std;
 
-// Konstanten für Trie-Konfiguration
+// Constants for Trie configuration (unchanged)
 static constexpr int ALPHABET_SIZE = 26;
 static constexpr int OTHER_INDEX = ALPHABET_SIZE;
 static constexpr int TOTAL_CHILDREN = ALPHABET_SIZE + 1;
@@ -31,24 +32,19 @@ private:
 
 public:
     Trie() : root(make_unique<TrieNode>()) {}
-      void insert(const CastRelation* cast) const {
-        TrieNode* node = root.get();
 
+    void insert(const CastRelation* cast) const {
+        TrieNode* node = root.get();
         string_view note(cast->note);
 
         for (char c : note) {
             int index = charToIndex(c);
-
-            // Wenn Node noch nicht existiert, kreiere sie
             if (!node->children[index]) {
                 node->children[index] = make_unique<TrieNode>();
             }
-
-            // Gehe zur nächsten Node
             node = node->children[index].get();
         }
 
-        // Setze am Ende Cast als pointer hin
         node->endOfWord = true;
         node->cast.push_back(cast);
     }
@@ -57,24 +53,17 @@ public:
         TrieNode* node = root.get();
 
         for (char c : prefix) {
-            // Füge alle passenden Einträge auf aktuellem Knoten hinzu
             if (node->endOfWord) {
-                for (auto element : node->cast) {
-                    results.emplace_back(element);
-                }
+                results.insert(results.end(), node->cast.begin(), node->cast.end());
             }
 
             int index = charToIndex(c);
             if (!node->children[index]) return;
-
             node = node->children[index].get();
         }
 
-        // Füge Einträge des exakten Endknotens hinzu
         if (node->endOfWord) {
-            for (auto element : node->cast) {
-                results.emplace_back(element);
-            }
+            results.insert(results.end(), node->cast.begin(), node->cast.end());
         }
     }
 
@@ -88,26 +77,18 @@ private:
         if (!node) return;
 
         if (node->endOfWord) {
-            // Print the prefix and optionally additional cast information
             cout << "Word: " << prefix << " | Cast count: " << node->cast.size() << '\n';
         }
 
         for (int i = 0; i < TOTAL_CHILDREN; ++i) {
             if (node->children[i]) {
-                char c;
-                if (i == OTHER_INDEX) {
-                    c = '?';  // or some placeholder for non-alphabetic characters
-                } else {
-                    c = static_cast<char>('a' + i);
-                }
-
+                char c = (i == OTHER_INDEX) ? '?' : static_cast<char>('a' + i);
                 prefix.push_back(c);
                 printTrieRecursive(node->children[i].get(), prefix);
-                prefix.pop_back(); // backtrack
+                prefix.pop_back();
             }
         }
     }
-
 };
 
 //-------------------------------------------------------------------------------------------------------------------------
@@ -115,24 +96,41 @@ private:
 vector<ResultRelation> performJoin(const vector<CastRelation>& castRelation,
                                     const vector<TitleRelation>& titleRelation,
                                     int numThreads) {
-    vector<ResultRelation> resultTuples;
-    resultTuples.reserve(titleRelation.size() * 2); // Heuristische Reserve
-
+    // Single-threaded Trie construction
     Trie trie;
-
-    // Trie mit Cast-Daten füllen
     for (const auto& cast : castRelation) {
         trie.insert(&cast);
     }
     trie.printTrie();
-    // Titel durchsuchen und Matches sammelncd
-    vector<const CastRelation*> prefixMatches;
-    for (const auto& title : titleRelation) {
-        prefixMatches.clear();
-        trie.findPrefixMatches(title.title, prefixMatches);
 
-        for (const auto cast : prefixMatches) {
-            resultTuples.emplace_back(createResultTuple(*cast, title));
+    vector<ResultRelation> resultTuples;
+    resultTuples.reserve(titleRelation.size() * 2);
+
+    // Parallel section for title processing
+    #pragma omp parallel num_threads(numThreads)
+    {
+        // Thread-local storage for matches and results
+        vector<const CastRelation*> prefixMatches;
+        vector<ResultRelation> localResults;
+        localResults.reserve(titleRelation.size() * 2 / omp_get_num_threads());
+
+        #pragma omp for schedule(static)
+        for (size_t i = 0; i < titleRelation.size(); i++) {
+            const auto& title = titleRelation[i];
+            prefixMatches.clear();
+            trie.findPrefixMatches(title.title, prefixMatches);
+
+            for (const auto cast : prefixMatches) {
+                localResults.emplace_back(createResultTuple(*cast, title));
+            }
+        }
+
+        // Combine local results (critical section)
+        #pragma omp critical
+        {
+            resultTuples.insert(resultTuples.end(),
+                                make_move_iterator(localResults.begin()),
+                                make_move_iterator(localResults.end()));
         }
     }
 
