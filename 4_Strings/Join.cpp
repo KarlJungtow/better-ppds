@@ -79,11 +79,11 @@ std::vector<ResultRelation> performJoin(const std::vector<CastRelation>& castRel
                                        int numThreads) {
     omp_set_num_threads(numThreads);
     std::vector<ResultRelation> resultTuples;
-    Trie trie;  // Stack statt Heap!
+    Trie trie;  // Stack-Allokation statt Heap!
 
     // Trie aufbauen (single-threaded)
     for (const auto& cast : castRelation) {
-        trie.insert(const_cast<CastRelation*>(&cast));  // Workaround
+        trie.insert(const_cast<CastRelation*>(&cast));
     }
 
     // Thread-lokale Ergebnisse
@@ -91,15 +91,16 @@ std::vector<ResultRelation> performJoin(const std::vector<CastRelation>& castRel
 
 #pragma omp parallel num_threads(numThreads)
     {
-        int tid = omp_get_thread_num();
+        const int tid = omp_get_thread_num();
         auto& localResults = threadLocalResults[tid];
 
-        // Thread-lokaler Puffer für Casts (einmal initialisieren)
-        thread_local std::vector<CastRelation*> casts;
+        // Thread-lokaler Puffer für Casts
+        std::vector<CastRelation*> casts;
         casts.reserve(10);
 
 #pragma omp for schedule(dynamic)
-        for (const auto& title : titleRelation) {
+        for (const auto & title : titleRelation) {
+            // Referenz verwenden!
             casts.clear();
             trie.find(&title, casts);
 
@@ -121,5 +122,6 @@ std::vector<ResultRelation> performJoin(const std::vector<CastRelation>& castRel
                           std::make_move_iterator(localVec.begin()),
                           std::make_move_iterator(localVec.end()));
     }
+
     return resultTuples;
 }
