@@ -29,7 +29,7 @@ public:
     void insert(CastRelation* cast) const {
         TrieNode* node = root;
         for(auto c : cast->note) {
-            int index = tolower(c) - 'a';
+            int index = tolower(static_cast<unsigned char>(c)) - 'a';
             if (index < 0 || index > 25) {
                 index = 26;
             }
@@ -50,12 +50,12 @@ public:
         for(auto c : title->title) {
 
             //Welches Child ist es?
-            int index = tolower(c) - 'a';
+            int index = tolower(static_cast<unsigned char>(c)) - 'a';
             if (index < 0 || index > 25) {
                 index = 26;
             }
             //Sind im jetzigen Wort castRelation Entrys? Dann müssen sie Präfixe vom Wort sein
-            if (!node->cast.empty()) {
+            if (node->endOfWord) {
                 for (auto cast_entry : node->cast) {
                     result.emplace_back(cast_entry);
                 }
@@ -85,13 +85,17 @@ public:
 std::vector<ResultRelation> performJoin(const std::vector<CastRelation>& castRelation, const std::vector<TitleRelation>& titleRelation, int numThreads) {
     //omp_set_num_threads(numThreads);
     std::vector<ResultRelation> resultTuples;
+    Trie* trie = new Trie();
+    for (const auto& cast : castRelation) {
+        trie->insert(const_cast<CastRelation*>(&cast));
+    }
 
-    for(auto cast : castRelation) {
-        for (auto title : titleRelation) {
-            if (strncasecmp(cast.note, title.title, strlen(cast.note))==0) {
-                resultTuples.push_back(createResultTuple(cast, title));
-            }
+    for (auto title : titleRelation) {
+        vector<CastRelation*> casts = trie->find(&title);
+        for (auto element : casts) {
+            resultTuples.emplace_back(createResultTuple(*element, title));
         }
     }
+    delete trie;
     return resultTuples;
 }
