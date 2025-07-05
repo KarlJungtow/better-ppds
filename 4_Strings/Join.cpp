@@ -2,7 +2,6 @@
 #include <vector>
 using namespace std;
 
-
 class TrieNode {
 public:
     bool endOfWord;
@@ -67,6 +66,14 @@ public:
             // Else: Gehe weiter
             node = node->children[index];
         }
+
+        // Prüfe explizit den letzten Knoten (für exakte Übereinstimmungen)
+        if (node->endOfWord) {
+            for (auto cast_entry : node->cast) {
+                result.push_back(cast_entry);
+            }
+        }
+
         return result;
     }
 
