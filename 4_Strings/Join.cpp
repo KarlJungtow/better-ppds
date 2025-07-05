@@ -42,41 +42,25 @@ public:
         node->cast.emplace_back(cast);
     }
 
-    vector<CastRelation*> find(TitleRelation* title) const {
-        vector<CastRelation*> result;
+    void find(const TitleRelation* title, vector<CastRelation>& result) const {
         TrieNode* node = root;
-
-        // Für Buchstaben im Wort
-        for(auto c : title->title) {
-
-            //Welches Child ist es?
+        for (auto c : title->title) {
             int index = tolower(static_cast<unsigned char>(c)) - 'a';
-            if (index < 0 || index > 25) {
-                index = 26;
-            }
-            //Sind im jetzigen Wort castRelation Entrys? Dann müssen sie Präfixe vom Wort sein
+            if (index < 0 || index > 25) index = 26;
+
             if (node->endOfWord) {
-                for (auto cast_entry : node->cast) {
-                    result.emplace_back(cast_entry);
-                }
+                // Füge direkt in Ergebnisvektor ein
+                result.insert(result.end(), node->cast.begin(), node->cast.end());
             }
-            //Wort hört hier auf? Returne
-            if(!node->children[index]) {
-                return result;
-            }
-            // Else: Gehe weiter
+
+            if (!node->children[index]) return;
             node = node->children[index];
         }
-
-        // Prüfe explizit den letzten Knoten (für exakte Übereinstimmungen)
         if (node->endOfWord) {
-            for (auto cast_entry : node->cast) {
-                result.push_back(cast_entry);
-            }
+            result.insert(result.end(), node->cast.begin(), node->cast.end());
         }
-
-        return result;
     }
+
 
     static void  freeTrie(TrieNode* node) {
         for (auto & i : node->children) {
@@ -106,10 +90,12 @@ std::vector<ResultRelation> performJoin(const std::vector<CastRelation>& castRel
 
 #pragma omp for schedule(dynamic)
         for (auto title : titleRelation) {
-            vector<CastRelation*> casts = trie->find(&title);
+            vector<CastRelation> casts;
+            casts.reserve(10);
+            trie->find(&title, casts);
 
             for (auto element : casts) {
-                localResults.emplace_back(createResultTuple(*element, title));
+                localResults.emplace_back(createResultTuple(element, title));
             }
         }
 
@@ -118,7 +104,7 @@ std::vector<ResultRelation> performJoin(const std::vector<CastRelation>& castRel
             resultTuples.insert(resultTuples.end(), localVec.begin(), localVec.end());
         }
     }
-    
+
     delete trie;
     return resultTuples;
 }
