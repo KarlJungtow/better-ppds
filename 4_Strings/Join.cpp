@@ -1,13 +1,12 @@
 #include "JoinUtils.hpp"
 #include <vector>
-#include <chrono>
 using namespace std;
 
 
 class TrieNode {
 public:
     bool endOfWord;
-    TrieNode* children[26]{};
+    TrieNode* children[27]{};
     vector<CastRelation*> cast;
     TrieNode() {
         endOfWord = false;
@@ -31,6 +30,9 @@ public:
         TrieNode* node = root;
         for(auto c : cast->note) {
             int index = tolower(c) - 'a';
+            if (index < 0 || index > 25) {
+                index = 26;
+            }
             if(!node->children[index]) {
                 node->children[index] = new TrieNode();
             }
@@ -49,6 +51,9 @@ public:
 
             //Welches Child ist es?
             int index = tolower(c) - 'a';
+            if (index < 0 || index > 25) {
+                index = 26;
+            }
             //Sind im jetzigen Wort castRelation Entrys? Dann müssen sie Präfixe vom Wort sein
             if (!node->cast.empty()) {
                 for (auto cast_entry : node->cast) {
@@ -65,7 +70,7 @@ public:
         return result;
     }
 
-    static void freeTrie(TrieNode* node) {
+    static void  freeTrie(TrieNode* node) {
         for (auto & i : node->children) {
             if (i != nullptr) {
                 freeTrie(i);
