@@ -1,5 +1,6 @@
 #include "JoinUtils.hpp"
 #include <vector>
+#include <omp.h>
 using namespace std;
 
 class TrieNode {
@@ -90,19 +91,34 @@ public:
 
 //-------------------------------------------------------------------------------------------------------------------------
 std::vector<ResultRelation> performJoin(const std::vector<CastRelation>& castRelation, const std::vector<TitleRelation>& titleRelation, int numThreads) {
-    //omp_set_num_threads(numThreads);
-    std::vector<ResultRelation> resultTuples;
+    omp_set_num_threads(numThreads);
+    vector<ResultRelation> resultTuples;
     Trie* trie = new Trie();
     for (const auto& cast : castRelation) {
         trie->insert(const_cast<CastRelation*>(&cast));
     }
 
-    for (auto title : titleRelation) {
-        vector<CastRelation*> casts = trie->find(&title);
-        for (auto element : casts) {
-            resultTuples.emplace_back(createResultTuple(*element, title));
+    vector<vector<ResultRelation>> threadLocalResults(numThreads);
+
+#pragma omp parallel num_threads(numThreads)
+    {
+        vector<ResultRelation>& localResults = threadLocalResults[numThreads];
+
+#pragma omp for schedule(dynamic)
+        for (auto title : titleRelation) {
+            vector<CastRelation*> casts = trie->find(&title);
+
+            for (auto element : casts) {
+                localResults.emplace_back(createResultTuple(*element, title));
+            }
+        }
+
+        // Flatten threadLocalResults into resultTuples
+        for (auto& localVec : threadLocalResults) {
+            resultTuples.insert(resultTuples.end(), localVec.begin(), localVec.end());
         }
     }
+    
     delete trie;
     return resultTuples;
 }
