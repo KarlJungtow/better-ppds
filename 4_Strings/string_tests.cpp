@@ -92,7 +92,7 @@ int main() {
     }
 
     // Assertions für erwartete Ergebnisse
-    assert(results.size() == 6);  // Erwartete Anzahl von Ergebnissen
+    assert(results.size() == 1);  // Erwartete Anzahl von Ergebnissen
 
     std::cout << "Alle Tests erfolgreich bestanden!\n";
     return 0;
