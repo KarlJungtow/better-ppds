@@ -86,10 +86,14 @@ vector<ResultRelation> performJoin(const vector<CastRelation>& castRelation,
     resultTuples.reserve(titleRelation.size() * 2); // Heuristische Reserve
 
     Trie trie;
-
+    int index = 0;
     // Trie mit Cast-Daten füllen
     for (const auto& cast : castRelation) {
         trie.insert(&cast);
+        index += 1;
+        if (index % 1000 == 0) {
+            cout << "Got here!";
+        }
     }
 
     // Titel durchsuchen und Matches sammelncd
