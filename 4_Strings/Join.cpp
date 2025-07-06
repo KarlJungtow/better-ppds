@@ -77,13 +77,19 @@ public:
     }
 };
 
+bool is_digits(const std::string &str)
+{
+    return str.find_first_not_of("0123456789") == std::string::npos;
+}
+
+
 //-------------------------------------------------------------------------------------------------------------------------
 
 vector<ResultRelation> performJoin(const vector<CastRelation>& castRelation,
                                     const vector<TitleRelation>& titleRelation,
                                     int numThreads) {
     vector<ResultRelation> resultTuples;
-    resultTuples.reserve(titleRelation.size()); // Heuristische Reserve - kann auch * 2 
+    resultTuples.reserve(titleRelation.size()); // Heuristische Reserve - kann auch * 2
 
     Trie trie;
     int index = 0;
@@ -91,15 +97,15 @@ vector<ResultRelation> performJoin(const vector<CastRelation>& castRelation,
     for (const auto& cast : castRelation) {
         trie.insert(&cast);
         index += 1;
-        if (index % 1000 == 0) {
-            cout << "\n Movie: " << cast.note << "with size: " << sizeof(cast);
+        if (!is_digits(cast.note)) {
+            cout << "\n Movie: " << cast.note << " with size: " << sizeof(cast);
         }
     }
 
     // Titel durchsuchen und Matches sammelncd
-    vector<const CastRelation*> prefixMatches;
     for (const auto& title : titleRelation) {
-        prefixMatches.clear();
+        vector<const CastRelation*> prefixMatches;
+        prefixMatches.reserve(5);
         trie.findPrefixMatches(title.title, prefixMatches);
 
         for (const auto cast : prefixMatches) {
