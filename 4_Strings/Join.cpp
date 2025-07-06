@@ -96,6 +96,8 @@ vector<ResultRelation> performJoin(const vector<CastRelation>& castRelation,
                                     const vector<TitleRelation>& titleRelation,
                                     int numThreads) {
     // Setze die Anzahl der OpenMP-Threads
+    cout << numThreads << endl;
+
     omp_set_num_threads(numThreads);
 
     vector<Trie> localTries(numThreads);
