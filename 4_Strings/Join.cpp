@@ -96,14 +96,13 @@ vector<ResultRelation> performJoin(const vector<CastRelation>& castRelation,
                                     const vector<TitleRelation>& titleRelation,
                                     int numThreads) {
     // Setze die Anzahl der OpenMP-Threads
-    cout << numThreads << endl;
+    int number_threads = 50;
+    omp_set_num_threads(number_threads);
 
-    omp_set_num_threads(numThreads);
-
-    vector<Trie> localTries(numThreads);
+    vector<Trie> localTries(number_threads);
 
     // Phase 1: Paralleles Einfügen in lokale Tries
-    #pragma omp parallel num_threads(numThreads)
+    #pragma omp parallel num_threads(number_threads)
     {
         int thread_id = omp_get_thread_num();
         #pragma omp for schedule(static)
@@ -120,13 +119,13 @@ vector<ResultRelation> performJoin(const vector<CastRelation>& castRelation,
 
     // Phase 3: Paralleles Suchen und Sammeln der Ergebnisse
     vector<ResultRelation> globalResults;
-    vector<vector<ResultRelation>> threadResults(numThreads);
+    vector<vector<ResultRelation>> threadResults(number_threads);
 
-    #pragma omp parallel num_threads(numThreads)
+    #pragma omp parallel num_threads(number_threads)
     {
         int thread_id = omp_get_thread_num();
         vector<ResultRelation>& localResults = threadResults[thread_id];
-        localResults.reserve(titleRelation.size() * 2 / numThreads); // Heuristische Reserve
+        localResults.reserve(titleRelation.size() * 2 / number_threads); // Heuristische Reserve
 
         #pragma omp for schedule(dynamic, 256)
         for (const auto & title : titleRelation) {
