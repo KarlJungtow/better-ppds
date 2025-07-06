@@ -3,6 +3,8 @@
 #include <memory>
 #include <cctype>
 #include <string_view>
+#include <omp.h>
+#include <algorithm>
 using namespace std;
 
 // Konstanten für Trie-Konfiguration
@@ -20,7 +22,6 @@ private:
 
     unique_ptr<TrieNode> root;
 
-
     static int charToIndex(char c) {
         c = tolower(c);
         if (c >= 'a' && c <= 'z') {
@@ -31,53 +32,61 @@ private:
         return OTHER_INDEX; // anything else
     }
 
+    static void mergeNodes(TrieNode* this_node, TrieNode* other_node) {
+        if (other_node->endOfWord) {
+            this_node->endOfWord = true;
+            for (const auto* castPtr : other_node->cast) {
+                this_node->cast.push_back(castPtr);
+            }
+        }
+
+        for (int i = 0; i < TOTAL_CHILDREN; i++) {
+            if (other_node->children[i]) {
+                if (!this_node->children[i]) {
+                    this_node->children[i] = move(other_node->children[i]);
+                } else {
+                    mergeNodes(this_node->children[i].get(), other_node->children[i].get());
+                }
+            }
+        }
+    }
 
 public:
     Trie() : root(make_unique<TrieNode>()) {}
-      void insert(const CastRelation* cast) const {
-        TrieNode* node = root.get();
 
+    void insert(const CastRelation* cast) const {
+        TrieNode* node = root.get();
         string_view note(cast->note);
+
         for (char c : note) {
             int index = charToIndex(c);
-
-            // Wenn Node noch nicht existiert, kreiere sie
             if (!node->children[index]) {
                 node->children[index] = make_unique<TrieNode>();
             }
-
-            // Gehe zur nächsten Node
-             node = node->children[index].get();
+            node = node->children[index].get();
         }
 
-        // Setze am Ende Cast als pointer hin
         node->endOfWord = true;
         node->cast.push_back(cast);
     }
 
     void findPrefixMatches(const string& prefix, vector<const CastRelation*>& results) const {
         TrieNode* node = root.get();
-
         for (char c : prefix) {
-            // Füge alle passenden Einträge auf aktuellem Knoten hinzu
             if (node->endOfWord) {
-                for (auto element : node->cast) {
-                    results.emplace_back(element);
-                }
+                results.insert(results.end(), node->cast.begin(), node->cast.end());
             }
-
             int index = charToIndex(c);
             if (!node->children[index]) return;
-
             node = node->children[index].get();
         }
-
-        // Füge Einträge des exakten Endknotens hinzu
         if (node->endOfWord) {
-            for (auto element : node->cast) {
-                results.emplace_back(element);
-            }
+            results.insert(results.end(), node->cast.begin(), node->cast.end());
         }
+    }
+
+    void merge(Trie&& other) {
+        mergeNodes(root.get(), other.root.get());
     }
 };
 
@@ -86,26 +95,60 @@ public:
 vector<ResultRelation> performJoin(const vector<CastRelation>& castRelation,
                                     const vector<TitleRelation>& titleRelation,
                                     int numThreads) {
-    vector<ResultRelation> resultTuples;
-    resultTuples.reserve(titleRelation.size()); // Heuristische Reserve - kann auch * 2
+    // Setze die Anzahl der OpenMP-Threads
+    omp_set_num_threads(numThreads);
 
-    Trie trie;
-    int index = 0;
-    // Trie mit Cast-Daten füllen
-    for (const auto& cast : castRelation) {
-        trie.insert(&cast);
-    }
+    vector<Trie> localTries(numThreads);
 
-    // Titel durchsuchen und Matches sammelncd
-    for (const auto& title : titleRelation) {
-        vector<const CastRelation*> prefixMatches;
-        prefixMatches.reserve(5);
-        trie.findPrefixMatches(title.title, prefixMatches);
-
-        for (const auto cast : prefixMatches) {
-            resultTuples.emplace_back(createResultTuple(*cast, title));
+    // Phase 1: Paralleles Einfügen in lokale Tries
+    #pragma omp parallel num_threads(numThreads)
+    {
+        int thread_id = omp_get_thread_num();
+        #pragma omp for schedule(static)
+        for (size_t i = 0; i < castRelation.size(); i++) {
+            localTries[thread_id].insert(&castRelation[i]);
         }
     }
-    //Hallo!
-    return resultTuples;
+
+    // Phase 2: Zusammenführen der lokalen Tries
+    Trie globalTrie;
+    for (auto& lt : localTries) {
+        globalTrie.merge(move(lt));
+    }
+
+    // Phase 3: Paralleles Suchen und Sammeln der Ergebnisse
+    vector<ResultRelation> globalResults;
+    vector<vector<ResultRelation>> threadResults(numThreads);
+
+    #pragma omp parallel num_threads(numThreads)
+    {
+        int thread_id = omp_get_thread_num();
+        vector<ResultRelation>& localResults = threadResults[thread_id];
+        localResults.reserve(titleRelation.size() * 2 / numThreads); // Heuristische Reserve
+
+        #pragma omp for schedule(static)
+        for (size_t i = 0; i < titleRelation.size(); i++) {
+            const auto& title = titleRelation[i];
+            vector<const CastRelation*> prefixMatches;
+            prefixMatches.reserve(10); // Heuristische Reserve
+
+            globalTrie.findPrefixMatches(title.title, prefixMatches);
+
+            for (const auto* cast : prefixMatches) {
+                localResults.emplace_back(createResultTuple(*cast, title));
+            }
+        }
+    }
+
+    // Kombiniere alle lokalen Ergebnisse
+    size_t totalSize = 0;
+    for (auto& vec : threadResults) {
+        totalSize += vec.size();
+    }
+    globalResults.reserve(totalSize);
+    for (auto& vec : threadResults) {
+        move(vec.begin(), vec.end(), back_inserter(globalResults));
+    }
+
+    return globalResults;
 }
