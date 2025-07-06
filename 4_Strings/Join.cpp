@@ -83,7 +83,7 @@ vector<ResultRelation> performJoin(const vector<CastRelation>& castRelation,
                                     const vector<TitleRelation>& titleRelation,
                                     int numThreads) {
     vector<ResultRelation> resultTuples;
-    resultTuples.reserve(titleRelation.size() * 2); // Heuristische Reserve
+    resultTuples.reserve(titleRelation.size()); // Heuristische Reserve - kann auch * 2 
 
     Trie trie;
     int index = 0;
@@ -92,7 +92,7 @@ vector<ResultRelation> performJoin(const vector<CastRelation>& castRelation,
         trie.insert(&cast);
         index += 1;
         if (index % 1000 == 0) {
-            cout << "Got here!";
+            cout << "\n Movie: " << cast.note << "with size: " << sizeof(cast);
         }
     }
 
