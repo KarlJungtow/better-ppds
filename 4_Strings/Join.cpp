@@ -105,8 +105,8 @@ vector<ResultRelation> performJoin(const vector<CastRelation>& castRelation,
     {
         int thread_id = omp_get_thread_num();
         #pragma omp for schedule(static)
-        for (size_t i = 0; i < castRelation.size(); i++) {
-            localTries[thread_id].insert(&castRelation[i]);
+        for (const auto & i : castRelation) {
+            localTries[thread_id].insert(&i);
         }
     }
 
@@ -126,14 +126,11 @@ vector<ResultRelation> performJoin(const vector<CastRelation>& castRelation,
         vector<ResultRelation>& localResults = threadResults[thread_id];
         localResults.reserve(titleRelation.size() * 2 / numThreads); // Heuristische Reserve
 
-        #pragma omp for schedule(static)
-        for (size_t i = 0; i < titleRelation.size(); i++) {
-            const auto& title = titleRelation[i];
+        #pragma omp for schedule(dynamic, 256)
+        for (const auto & title : titleRelation) {
             vector<const CastRelation*> prefixMatches;
-            prefixMatches.reserve(10); // Heuristische Reserve
-
+            prefixMatches.reserve(10);
             globalTrie.findPrefixMatches(title.title, prefixMatches);
-
             for (const auto* cast : prefixMatches) {
                 localResults.emplace_back(createResultTuple(*cast, title));
             }
