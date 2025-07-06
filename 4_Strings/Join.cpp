@@ -6,7 +6,7 @@
 using namespace std;
 
 // Konstanten für Trie-Konfiguration
-static constexpr int ALPHABET_SIZE = 26;
+static constexpr int ALPHABET_SIZE = 36;
 static constexpr int OTHER_INDEX = ALPHABET_SIZE;
 static constexpr int TOTAL_CHILDREN = ALPHABET_SIZE + 1;
 
@@ -20,13 +20,17 @@ private:
 
     unique_ptr<TrieNode> root;
 
-    static int charToIndex (char c){
+
+    static int charToIndex(char c) {
         c = tolower(c);
         if (c >= 'a' && c <= 'z') {
-            return c - 'a';
+            return c - 'a'; // 0 to 25
+        } else if (c >= '0' && c <= '9') {
+            return 26 + (c - '0'); // 26 to 35
         }
-        return OTHER_INDEX;
+        return OTHER_INDEX; // anything else
     }
+
 
 public:
     Trie() : root(make_unique<TrieNode>()) {}
@@ -43,7 +47,7 @@ public:
             }
 
             // Gehe zur nächsten Node
-            node = node->children[index].get();
+             node = node->children[index].get();
         }
 
         // Setze am Ende Cast als pointer hin
@@ -77,12 +81,6 @@ public:
     }
 };
 
-bool is_digits(const std::string &str)
-{
-    return str.find_first_not_of("0123456789") == std::string::npos;
-}
-
-
 //-------------------------------------------------------------------------------------------------------------------------
 
 vector<ResultRelation> performJoin(const vector<CastRelation>& castRelation,
@@ -96,10 +94,6 @@ vector<ResultRelation> performJoin(const vector<CastRelation>& castRelation,
     // Trie mit Cast-Daten füllen
     for (const auto& cast : castRelation) {
         trie.insert(&cast);
-        index += 1;
-        if (!is_digits(cast.note)) {
-            cout << "\n Movie: " << cast.note << " with size: " << sizeof(cast);
-        }
     }
 
     // Titel durchsuchen und Matches sammelncd
