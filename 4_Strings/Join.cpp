@@ -106,5 +106,6 @@ vector<ResultRelation> performJoin(const vector<CastRelation>& castRelation,
             resultTuples.emplace_back(createResultTuple(*cast, title));
         }
     }
+    //Hallo!
     return resultTuples;
 }
